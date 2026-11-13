@@ -263,26 +263,6 @@ export default function App() {
                   style={{ width: '100%', height: '380px', objectFit: 'cover', display: 'block' }}
                 />
               </div>
-              {/* Floating Stat Badge */}
-              <div style={{
-                position: 'absolute',
-                bottom: '-18px',
-                left: '20px',
-                background: '#fffbf7',
-                border: '1px solid #d4c5b9',
-                padding: '14px 20px',
-                borderRadius: '12px',
-                boxShadow: '0 10px 25px rgba(44,41,37,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <span style={{ fontSize: '1.6rem' }}>📖</span>
-                <div>
-                  <div style={{ fontWeight: '700', fontSize: '0.95rem', color: '#2c2925' }}>Warm Reading Mode</div>
-                  <div style={{ fontSize: '0.8rem', color: '#5e564f' }}>Reduced eye strain</div>
-                </div>
-              </div>
             </div>
           </section>
 
