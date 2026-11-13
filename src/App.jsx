@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 export default function App() {
-  const [view, setView] = useState('landing'); // 'landing' o 'tracker'
+  const [view, setView] = useState('landing'); // 'landing' or 'tracker'
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [books, setBooks] = useState([]);
   const [newUsername, setNewUsername] = useState('');
 
-  // Form states para sa bagong libro
+  // Form states for new book
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [pages, setPages] = useState('');
@@ -63,8 +63,8 @@ export default function App() {
 
   async function addBook(e) {
     e.preventDefault();
-    if (!selectedUser) return alert('Pumili muna o gumawa ng user!');
-    if (!title.trim() || !author.trim()) return alert('Lagyan ng title at author ang libro.');
+    if (!selectedUser) return alert('Please select or create a user first!');
+    if (!title.trim() || !author.trim()) return alert('Please provide both title and author.');
 
     const { data, error } = await supabase
       .from('books')
@@ -167,7 +167,7 @@ export default function App() {
               fontSize: '0.95rem'
             }}
           >
-            {view === 'tracker' ? 'Nasa Library Ka Na' : 'Buksan ang Library'}
+            {view === 'tracker' ? 'Open Library' : 'Open Library'}
           </button>
         </div>
       </nav>
@@ -197,7 +197,7 @@ export default function App() {
                 marginBottom: '18px',
                 border: '1px solid rgba(99, 102, 241, 0.3)'
               }}>
-                ✨ Ang Iyong Digital Reading Companion
+                ✨ Your Personal Digital Reading Companion
               </span>
               <h1 style={{
                 fontSize: 'clamp(2.2rem, 4vw, 3.4rem)',
@@ -206,7 +206,7 @@ export default function App() {
                 marginBottom: '20px',
                 color: '#ffffff'
               }}>
-                Subaybayan ang bawat pahina ng iyong paglalakbay.
+                Track every page of your reading journey.
               </h1>
               <p style={{
                 fontSize: '1.1rem',
@@ -214,7 +214,7 @@ export default function App() {
                 marginBottom: '32px',
                 maxWidth: '540px'
               }}>
-                Ayusin ang iyong mga binabasang libro, itala ang bilang ng pahina, at panatilihing naka-sync sa cloud ang iyong personal na koleksyon kahit saan ka magpunta.
+                Organize your reading list, log your book pages, and keep your personal library securely synced to the cloud wherever you go.
               </p>
 
               <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -232,7 +232,7 @@ export default function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  Simulan ang Pagbabasa →
+                  Start Reading →
                 </button>
                 <a
                   href="#features"
@@ -247,7 +247,7 @@ export default function App() {
                     textDecoration: 'none'
                   }}
                 >
-                  Alamin ang Features
+                  Explore Features
                 </a>
               </div>
             </div>
@@ -292,8 +292,8 @@ export default function App() {
           {/* Visual Gallery & Features Section */}
           <section id="features" style={{ padding: '70px 8%', background: '#11141c', borderTop: '1px solid #1f2430' }}>
             <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 50px auto' }}>
-              <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '12px' }}>Bakit Gagamit ng PageFlow?</h2>
-              <p style={{ color: '#9ca3af' }}>Dinisenyo para maging simple, mabilis, at walang kalat habang pinapayaman mo ang iyong reading habit.</p>
+              <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '12px' }}>Why Choose PageFlow?</h2>
+              <p style={{ color: '#9ca3af' }}>Designed to be clean, fast, and clutter-free while empowering your daily reading habits.</p>
             </div>
 
             <div style={{
@@ -309,9 +309,9 @@ export default function App() {
                   style={{ width: '100%', height: '180px', objectFit: 'cover' }}
                 />
                 <div style={{ padding: '20px' }}>
-                  <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#fff' }}>Organisadong Koleksyon</h3>
+                  <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#fff' }}>Organized Collection</h3>
                   <p style={{ fontSize: '0.9rem', color: '#9ca3af' }}>
-                    Ihiwalay ang mga librong <em>Want to Read</em>, <em>Currently Reading</em>, at <em>Completed</em> sa isang pindot lang.
+                    Seamlessly sort your books into <em>Want to Read</em>, <em>Currently Reading</em>, and <em>Completed</em> statuses.
                   </p>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export default function App() {
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#fff' }}>Multi-Reader Profiles</h3>
                   <p style={{ fontSize: '0.9rem', color: '#9ca3af' }}>
-                    Gumawa ng sariling profile o magdagdag ng iba pang mambabasa sa iisang workspace nang hindi naghahalo ang listahan.
+                    Create custom reader profiles or manage different accounts within a single workspace without mixing libraries.
                   </p>
                 </div>
               </div>
@@ -341,7 +341,7 @@ export default function App() {
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#fff' }}>Real-Time Cloud Save</h3>
                   <p style={{ fontSize: '0.9rem', color: '#9ca3af' }}>
-                    Lahat ng pagbabago ay direktang naka-save sa iyong database kaya hindi mawawala ang progress mo.
+                    Every change and update is instantly persisted to your secure cloud database.
                   </p>
                 </div>
               </div>
@@ -352,21 +352,21 @@ export default function App() {
         /* TRACKER VIEW */
         <div style={{ maxWidth: '800px', width: '100%', margin: '40px auto', padding: '24px', background: '#161b26', color: '#e0e0e0', borderRadius: '12px', border: '1px solid #232938' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ color: '#818cf8', margin: 0 }}>📚 Aking Reading List</h2>
+            <h2 style={{ color: '#818cf8', margin: 0 }}>📚 My Reading List</h2>
             <button
               onClick={() => setView('landing')}
               style={{ padding: '6px 12px', background: '#232938', color: '#d1d5db', border: '1px solid #374151', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
             >
-              ← Balik sa Home
+              ← Back to Home
             </button>
           </div>
 
           {/* User Management Section */}
           <div style={{ background: '#0d0f14', padding: '16px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #1f2430' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>Reader / User Profile</h3>
+            <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>Reader Profile</h3>
             {users.length > 0 ? (
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                <label style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Pumili ng Reader:</label>
+                <label style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Select Reader:</label>
                 <select
                   value={selectedUser ? selectedUser.id : ''}
                   onChange={(e) => {
@@ -381,19 +381,19 @@ export default function App() {
                 </select>
               </div>
             ) : (
-              <p style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Wala pang user sa database. Gumawa ng bago sa ibaba:</p>
+              <p style={{ fontSize: '0.9rem', color: '#9ca3af' }}>No users found in database. Create one below:</p>
             )}
 
             <form onSubmit={createUser} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <input
                 type="text"
-                placeholder="Bagong pangalan ng user..."
+                placeholder="New reader username..."
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
                 style={{ flex: 1, padding: '8px 12px', background: '#1f2430', color: '#fff', border: '1px solid #374151', borderRadius: '6px' }}
               />
               <button type="submit" style={{ padding: '8px 16px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                Magdagdag ng User
+                Add User
               </button>
             </form>
           </div>
@@ -402,17 +402,17 @@ export default function App() {
             <>
               {/* Add Book Form */}
               <form onSubmit={addBook} style={{ background: '#0d0f14', padding: '16px', borderRadius: '8px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #1f2430' }}>
-                <h3 style={{ fontSize: '1rem' }}>Magdagdag ng Bagong Libro para kay {selectedUser.username}</h3>
+                <h3 style={{ fontSize: '1rem' }}>Add a New Book for {selectedUser.username}</h3>
                 <input
                   type="text"
-                  placeholder="Pamagat ng Libro (Title)"
+                  placeholder="Book Title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   style={{ padding: '10px 12px', background: '#1f2430', color: '#fff', border: '1px solid #374151', borderRadius: '6px' }}
                 />
                 <input
                   type="text"
-                  placeholder="May-akda (Author)"
+                  placeholder="Author"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
                   style={{ padding: '10px 12px', background: '#1f2430', color: '#fff', border: '1px solid #374151', borderRadius: '6px' }}
@@ -420,7 +420,7 @@ export default function App() {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input
                     type="number"
-                    placeholder="Bilang ng Pahina (Pages)"
+                    placeholder="Total Pages"
                     value={pages}
                     onChange={(e) => setPages(e.target.value)}
                     style={{ flex: 1, padding: '10px 12px', background: '#1f2430', color: '#fff', border: '1px solid #374151', borderRadius: '6px' }}
@@ -436,22 +436,22 @@ export default function App() {
                   </select>
                 </div>
                 <button type="submit" style={{ padding: '11px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}>
-                  + I-save ang Libro
+                  + Save Book
                 </button>
               </form>
 
               {/* Book List */}
               <div>
-                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem' }}>Listahan ng mga Libro ({books.length})</h3>
+                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem' }}>Book List ({books.length})</h3>
                 {books.length === 0 ? (
-                  <p style={{ color: '#9ca3af', fontSize: '0.95rem' }}>Wala pang nakatalang libro. Magdagdag sa itaas!</p>
+                  <p style={{ color: '#9ca3af', fontSize: '0.95rem' }}>No books recorded yet. Add one above!</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {books.map(book => (
                       <div key={book.id} style={{ background: '#0d0f14', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #1f2430', borderLeft: `5px solid ${book.status === 'Completed' ? '#10b981' : book.status === 'Currently Reading' ? '#3b82f6' : '#6b7280'}` }}>
                         <div>
                           <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#fff' }}>{book.title}</h4>
-                          <p style={{ margin: '0 0 8px 0', color: '#9ca3af', fontSize: '0.9rem' }}>ni {book.author} • {book.pages || 0} pahina</p>
+                          <p style={{ margin: '0 0 8px 0', color: '#9ca3af', fontSize: '0.9rem' }}>by {book.author} • {book.pages || 0} pages</p>
                           <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '999px', background: '#1f2430', color: '#d1d5db' }}>
                             {book.status}
                           </span>
@@ -470,7 +470,7 @@ export default function App() {
                             onClick={() => deleteBook(book.id)}
                             style={{ padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
                           >
-                            Burahin
+                            Delete
                           </button>
                         </div>
                       </div>
