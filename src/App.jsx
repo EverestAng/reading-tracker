@@ -2,23 +2,20 @@ import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 export default function App() {
-  const [view, setView] = useState('landing'); // 'landing', 'login', 'register', or 'tracker'
+  const [view, setView] = useState('landing');
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [books, setBooks] = useState([]);
   const [filterStatus, setFilterStatus] = useState('All');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Login form states
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // Register form states
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  // Form states for new book
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [pages, setPages] = useState('');
@@ -30,6 +27,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedUser) {
+      console.log("Active User Data:", selectedUser); // Para makita mo sa console kung ano ang laman
       fetchBooks(selectedUser.id);
     } else {
       setBooks([]);
@@ -38,8 +36,9 @@ export default function App() {
 
   async function fetchUsers() {
     const { data, error } = await supabase.from('users').select('*');
-    if (error) console.error('Error fetching users:', error);
-    else if (data && data.length > 0) {
+    if (error) {
+      console.error('Error fetching users:', error);
+    } else if (data && data.length > 0) {
       setUsers(data);
       if (!selectedUser) setSelectedUser(data[0]);
     }
@@ -155,6 +154,10 @@ export default function App() {
     return b.status === filterStatus;
   });
 
+  // Safe getters para hindi mag-error kahit maantala ang fetch
+  const currentName = selectedUser?.name || users[0]?.name || 'Account';
+  const currentEmail = selectedUser?.email || users[0]?.email || 'No email registered';
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f7f4ef', color: '#2c2925' }}>
       {/* Top Navigation Bar */}
@@ -229,7 +232,7 @@ export default function App() {
                   gap: '8px'
                 }}
               >
-                <span>👤 {selectedUser ? selectedUser.name : 'Account'}</span>
+                <span>👤 {currentName}</span>
                 <span style={{ fontSize: '0.75rem' }}>▼</span>
               </button>
 
@@ -242,14 +245,14 @@ export default function App() {
                   border: '1px solid #d4c5b9',
                   borderRadius: '8px',
                   boxShadow: '0 8px 20px rgba(44,41,37,0.15)',
-                  width: '220px',
+                  width: '240px',
                   zIndex: 20,
                   overflow: 'hidden'
                 }}>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #eee6dc', background: '#f7f4ef' }}>
                     <div style={{ fontSize: '0.75rem', color: '#8c7b6c', fontWeight: '600' }}>Signed in as</div>
                     <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {selectedUser && selectedUser.email ? selectedUser.email : 'No email provided'}
+                      {currentEmail}
                     </div>
                   </div>
                   <button
@@ -619,7 +622,7 @@ export default function App() {
             <div>
               <span style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Dashboard</span>
               <h2 style={{ color: '#5c4033', margin: '4px 0 0 0', fontSize: '1.8rem' }}>
-                Welcome back, {selectedUser ? selectedUser.name : 'Reader'}! 📖
+                Welcome back, {currentName}! 📖
               </h2>
             </div>
           </div>
