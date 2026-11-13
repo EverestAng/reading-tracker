@@ -151,7 +151,7 @@ export default function App() {
             Home
           </button>
           <button
-            onClick={() => setView('tracker')}
+            onClick={() => setView(view === 'landing' ? 'tracker' : 'landing')}
             className="cta-btn"
             style={{
               padding: '8px 18px',
@@ -164,7 +164,7 @@ export default function App() {
               fontSize: '0.95rem'
             }}
           >
-            Open Library
+            {view === 'landing' ? 'My Library' : 'Home'}
           </button>
         </div>
       </nav>
