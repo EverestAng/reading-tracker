@@ -6,8 +6,8 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #0d0f14;
-  color: #f3f4f6;
+  background-color: #f7f4ef; /* Soft warm parchment background para hindi masakit sa mata */
+  color: #2c2925; /* Deep warm charcoal text sa halip na purong itim */
   line-height: 1.6;
 }
 
@@ -21,7 +21,7 @@ button, select, input {
 
 .cta-btn:hover {
   transform: translateY(-2px);
-  background-color: #4338ca !important;
+  background-color: #3b3530 !important;
 }
 
 .feature-card {
@@ -30,5 +30,5 @@ button, select, input {
 
 .feature-card:hover {
   transform: translateY(-4px);
-  border-color: #4f46e5 !important;
+  border-color: #8c7b6c !important;
 }
