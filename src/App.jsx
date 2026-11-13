@@ -6,14 +6,14 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [books, setBooks] = useState([]);
-  const [newUsername, setNewUsername] = useState('');
+  const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Want to Read', 'Currently Reading', 'Completed'
 
   // Login form states
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   // Register form states
-  const [regUsername, setRegUsername] = useState('');
+  const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
@@ -40,29 +40,37 @@ export default function App() {
     if (error) console.error('Error fetching users:', error);
     else if (data && data.length > 0) {
       setUsers(data);
-      setSelectedUser(data[0]);
+      // Piliin ang unang user bilang default kung wala pang naka-select
+      if (!selectedUser) setSelectedUser(data[0]);
     }
   }
 
   async function handleLogin(e) {
     e.preventDefault();
     if (!loginEmail.trim()) {
-      alert('Please enter your email or username.');
+      alert('Please enter your email or name.');
       return;
+    }
+    // Hanapin kung merong user na tugma ang email o name
+    const found = users.find(u => u.email === loginEmail || u.name.toLowerCase() === loginEmail.toLowerCase());
+    if (found) {
+      setSelectedUser(found);
+    } else if (users.length > 0) {
+      setSelectedUser(users[0]); // Fallback sa unang user kung type-based mock login
     }
     setView('tracker');
   }
 
   async function handleRegister(e) {
     e.preventDefault();
-    if (!regUsername.trim() || !regEmail.trim()) {
+    if (!regName.trim() || !regEmail.trim()) {
       alert('Please fill in all required fields.');
       return;
     }
 
     const { data, error } = await supabase
       .from('users')
-      .insert([{ username: regUsername }])
+      .insert([{ name: regName, email: regEmail, password: regPassword }])
       .select();
 
     if (error) {
@@ -72,23 +80,6 @@ export default function App() {
       setSelectedUser(data[0]);
       alert('Registration successful! Welcome to PageFlow.');
       setView('tracker');
-    }
-  }
-
-  async function createUser(e) {
-    e.preventDefault();
-    if (!newUsername.trim()) return;
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{ username: newUsername }])
-      .select();
-
-    if (error) {
-      alert('Error adding user: ' + error.message);
-    } else if (data) {
-      setUsers([...users, data[0]]);
-      setSelectedUser(data[0]);
-      setNewUsername('');
     }
   }
 
@@ -103,7 +94,7 @@ export default function App() {
 
   async function addBook(e) {
     e.preventDefault();
-    if (!selectedUser) return alert('Please select or create a user first!');
+    if (!selectedUser) return alert('Please select a user profile first!');
     if (!title.trim() || !author.trim()) return alert('Please provide both title and author.');
 
     const { data, error } = await supabase
@@ -154,8 +145,20 @@ export default function App() {
     }
   }
 
+  // Statistics calculation for the Dashboard
+  const totalBooks = books.length;
+  const currentlyReadingCount = books.filter(b => b.status === 'Currently Reading').length;
+  const completedCount = books.filter(b => b.status === 'Completed').length;
+  const wantToReadCount = books.filter(b => b.status === 'Want to Read').length;
+
+  // Filtered books based on selected tab
+  const filteredBooks = books.filter(b => {
+    if (filterStatus === 'All') return true;
+    return b.status === filterStatus;
+  });
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f7f4ef', color: '#2c2925' }}>
       {/* Top Navigation Bar */}
       <nav style={{
         display: 'flex',
@@ -196,7 +199,6 @@ export default function App() {
               </button>
               <button
                 onClick={() => setView('register')}
-                className="cta-btn"
                 style={{
                   padding: '8px 18px',
                   background: '#5c4033',
@@ -211,6 +213,22 @@ export default function App() {
                 Register
               </button>
             </>
+          ) : view === 'tracker' ? (
+            <button
+              onClick={() => setView('landing')}
+              style={{
+                padding: '8px 16px',
+                background: '#a83232',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              Log Out
+            </button>
           ) : (
             <button
               onClick={() => setView('landing')}
@@ -275,11 +293,9 @@ export default function App() {
                 Organize your reading list, log your book pages, and enjoy a warm, glare-free interface designed to keep your eyes relaxed during long reading sessions.
               </p>
 
-              {/* ISANG GET STARTED BUTTON NA LANG SA BABA NG HERO */}
               <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => setView('register')}
-                  className="cta-btn"
                   style={{
                     padding: '14px 28px',
                     background: '#5c4033',
@@ -323,7 +339,7 @@ export default function App() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
               gap: '24px'
             }}>
-              <div className="feature-card" style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
+              <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
                 <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80" alt="Library" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Organized Collection</h3>
@@ -331,7 +347,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="feature-card" style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
+              <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
                 <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80" alt="Journal" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Multi-Reader Profiles</h3>
@@ -339,7 +355,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="feature-card" style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
+              <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
                 <img src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80" alt="Library interior" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Real-Time Cloud Save</h3>
@@ -374,7 +390,7 @@ export default function App() {
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Email Address or Username *
+                  Email Address or Name *
                 </label>
                 <input
                   type="text"
@@ -399,9 +415,6 @@ export default function App() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#5e564f', cursor: 'pointer' }}>
-                  <input type="checkbox" style={{ accentColor: '#5c4033' }} /> Remember me
-                </label>
                 <span style={{ color: '#5e564f' }}>
                   Don't have an account? <a href="#register" onClick={(e) => { e.preventDefault(); setView('register'); }} style={{ color: '#5c4033', fontWeight: '700', textDecoration: 'none' }}>Register</a>
                 </span>
@@ -474,13 +487,13 @@ export default function App() {
             <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Reader Username *
+                  Your Name *
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. EverestAng"
-                  value={regUsername}
-                  onChange={(e) => setRegUsername(e.target.value)}
+                  placeholder="e.g. Everest Ang"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
                 />
               </div>
@@ -559,111 +572,151 @@ export default function App() {
         </main>
       )}
 
-      {/* TRACKER VIEW */}
+      {/* POST-LOGIN DASHBOARD VIEW */}
       {view === 'tracker' && (
-        <div style={{ maxWidth: '800px', width: '100%', margin: '40px auto', padding: '24px', background: '#fffbf7', color: '#2c2925', borderRadius: '12px', border: '1px solid #d4c5b9', boxShadow: '0 10px 30px rgba(44,41,37,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ color: '#5c4033', margin: 0 }}>📚 My Reading List</h2>
-            <button
-              onClick={() => setView('landing')}
-              style={{ padding: '6px 12px', background: '#eee6dc', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
-            >
-              ← Back to Home
-            </button>
-          </div>
+        <div style={{ maxWidth: '900px', width: '100%', margin: '40px auto', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          {/* Welcome Banner & Profile Switcher */}
+          <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <span style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Dashboard</span>
+              <h2 style={{ color: '#5c4033', margin: '4px 0 0 0', fontSize: '1.8rem' }}>
+                Welcome back, {selectedUser ? selectedUser.name : 'Reader'}! 📖
+              </h2>
+            </div>
 
-          {/* User Management Section */}
-          <div style={{ background: '#f7f4ef', padding: '16px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #d4c5b9' }}>
-            <h3 style={{ fontSize: '1rem', marginBottom: '10px', color: '#2c2925' }}>Reader Profile</h3>
-            {users.length > 0 ? (
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                <label style={{ fontSize: '0.9rem', color: '#5e564f' }}>Select Reader:</label>
+            {users.length > 0 && (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.85rem', color: '#5e564f', fontWeight: '600' }}>Active Reader:</label>
                 <select
                   value={selectedUser ? selectedUser.id : ''}
                   onChange={(e) => {
                     const found = users.find(u => u.id == e.target.value);
                     setSelectedUser(found);
                   }}
-                  style={{ padding: '6px 10px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
+                  style={{ padding: '8px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', fontWeight: '600' }}
                 >
                   {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.username}</option>
+                    <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
               </div>
-            ) : (
-              <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>No users found in database. Create one below:</p>
             )}
+          </div>
 
-            <form onSubmit={createUser} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <input
-                type="text"
-                placeholder="New reader username..."
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                style={{ flex: 1, padding: '8px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-              />
-              <button type="submit" style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                Add User
-              </button>
-            </form>
+          {/* Quick Stats Summary Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ background: '#f7f4ef', padding: '20px', borderRadius: '10px', border: '1px solid #d4c5b9', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#5c4033' }}>{totalBooks}</div>
+              <div style={{ fontSize: '0.85rem', color: '#5e564f', fontWeight: '600', marginTop: '4px' }}>Total Books</div>
+            </div>
+            <div style={{ background: '#f7f4ef', padding: '20px', borderRadius: '10px', border: '1px solid #d4c5b9', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#2b5c8f' }}>{currentlyReadingCount}</div>
+              <div style={{ fontSize: '0.85rem', color: '#5e564f', fontWeight: '600', marginTop: '4px' }}>Currently Reading</div>
+            </div>
+            <div style={{ background: '#f7f4ef', padding: '20px', borderRadius: '10px', border: '1px solid #d4c5b9', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#3b7a57' }}>{completedCount}</div>
+              <div style={{ fontSize: '0.85rem', color: '#5e564f', fontWeight: '600', marginTop: '4px' }}>Completed</div>
+            </div>
+            <div style={{ background: '#f7f4ef', padding: '20px', borderRadius: '10px', border: '1px solid #d4c5b9', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#8c7b6c' }}>{wantToReadCount}</div>
+              <div style={{ fontSize: '0.85rem', color: '#5e564f', fontWeight: '600', marginTop: '4px' }}>Want to Read</div>
+            </div>
           </div>
 
           {selectedUser && (
-            <>
-              {/* Add Book Form */}
-              <form onSubmit={addBook} style={{ background: '#f7f4ef', padding: '16px', borderRadius: '8px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #d4c5b9' }}>
-                <h3 style={{ fontSize: '1rem', color: '#2c2925' }}>Add a New Book for {selectedUser.username}</h3>
-                <input
-                  type="text"
-                  placeholder="Book Title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  style={{ padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                />
-                <input
-                  type="text"
-                  placeholder="Author"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  style={{ padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <input
-                    type="number"
-                    placeholder="Total Pages"
-                    value={pages}
-                    onChange={(e) => setPages(e.target.value)}
-                    style={{ flex: 1, padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                  />
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    style={{ flex: 1, padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                  >
-                    <option value="Want to Read">Want to Read</option>
-                    <option value="Currently Reading">Currently Reading</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-                <button type="submit" style={{ padding: '11px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}>
-                  + Save Book
-                </button>
-              </form>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', alignItems: 'start' }}>
+              
+              {/* Left Column: Add New Book Form */}
+              <div style={{ background: '#f7f4ef', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
+                <h3 style={{ fontSize: '1.1rem', color: '#2c2925', marginBottom: '16px' }}>+ Add a New Book</h3>
+                <form onSubmit={addBook} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Book Title *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Atomic Habits"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Author *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. James Clear"
+                      value={author}
+                      onChange={(e) => setAuthor(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Total Pages</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 320"
+                      value={pages}
+                      onChange={(e) => setPages(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Status</label>
+                    <select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
+                    >
+                      <option value="Want to Read">Want to Read</option>
+                      <option value="Currently Reading">Currently Reading</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                  <button type="submit" style={{ padding: '12px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', marginTop: '6px' }}>
+                    Save Book
+                  </button>
+                </form>
+              </div>
 
-              {/* Book List */}
-              <div>
-                <h3 style={{ marginBottom: '12px', fontSize: '1.05rem', color: '#2c2925' }}>Book List ({books.length})</h3>
-                {books.length === 0 ? (
-                  <p style={{ color: '#5e564f', fontSize: '0.95rem' }}>No books recorded yet. Add one above!</p>
+              {/* Right Column: Book List with Status Filter Tabs */}
+              <div style={{ background: '#f7f4ef', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c2925' }}>My Library</h3>
+                  
+                  {/* Filter Tabs */}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {['All', 'Want to Read', 'Currently Reading', 'Completed'].map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setFilterStatus(tab)}
+                        style={{
+                          padding: '5px 10px',
+                          fontSize: '0.78rem',
+                          fontWeight: '600',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          background: filterStatus === tab ? '#5c4033' : '#ede7df',
+                          color: filterStatus === tab ? '#fff' : '#5e564f',
+                          border: '1px solid #d4c5b9'
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {filteredBooks.length === 0 ? (
+                  <p style={{ color: '#5e564f', fontSize: '0.95rem', textAlign: 'center', padding: '40px 0' }}>No books found in this category.</p>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {books.map(book => (
-                      <div key={book.id} style={{ background: '#f7f4ef', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {filteredBooks.map(book => (
+                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
                         <div>
-                          <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: '#2c2925' }}>{book.title}</h4>
-                          <p style={{ margin: '0 0 8px 0', color: '#5e564f', fontSize: '0.9rem' }}>by {book.author} • {book.pages || 0} pages</p>
-                          <span style={{ fontSize: '0.78rem', padding: '3px 10px', borderRadius: '999px', background: '#eee6dc', color: '#2c2925' }}>
+                          <h4 style={{ margin: '0 0 3px 0', fontSize: '1.05rem', color: '#2c2925' }}>{book.title}</h4>
+                          <p style={{ margin: '0 0 6px 0', color: '#5e564f', fontSize: '0.85rem' }}>by {book.author} • {book.pages || 0} pages</p>
+                          <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '999px', background: '#eee6dc', color: '#2c2925', fontWeight: '600' }}>
                             {book.status}
                           </span>
                         </div>
@@ -671,7 +724,7 @@ export default function App() {
                           <select
                             value={book.status}
                             onChange={(e) => updateStatus(book.id, e.target.value)}
-                            style={{ padding: '6px 8px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', fontSize: '0.85rem' }}
+                            style={{ padding: '6px 8px', background: '#f7f4ef', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', fontSize: '0.8rem' }}
                           >
                             <option value="Want to Read">Want to Read</option>
                             <option value="Currently Reading">Reading</option>
@@ -679,7 +732,7 @@ export default function App() {
                           </select>
                           <button
                             onClick={() => deleteBook(book.id)}
-                            style={{ padding: '6px 12px', background: '#a83232', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                            style={{ padding: '6px 10px', background: '#a83232', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}
                           >
                             Delete
                           </button>
@@ -689,7 +742,8 @@ export default function App() {
                   </div>
                 )}
               </div>
-            </>
+
+            </div>
           )}
         </div>
       )}
