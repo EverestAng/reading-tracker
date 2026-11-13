@@ -6,7 +6,8 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [books, setBooks] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Want to Read', 'Currently Reading', 'Completed'
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Login form states
   const [loginEmail, setLoginEmail] = useState('');
@@ -40,7 +41,6 @@ export default function App() {
     if (error) console.error('Error fetching users:', error);
     else if (data && data.length > 0) {
       setUsers(data);
-      // Piliin ang unang user bilang default kung wala pang naka-select
       if (!selectedUser) setSelectedUser(data[0]);
     }
   }
@@ -51,14 +51,14 @@ export default function App() {
       alert('Please enter your email or name.');
       return;
     }
-    // Hanapin kung merong user na tugma ang email o name
     const found = users.find(u => u.email === loginEmail || u.name.toLowerCase() === loginEmail.toLowerCase());
     if (found) {
       setSelectedUser(found);
     } else if (users.length > 0) {
-      setSelectedUser(users[0]); // Fallback sa unang user kung type-based mock login
+      setSelectedUser(users[0]);
     }
     setView('tracker');
+    setDropdownOpen(false);
   }
 
   async function handleRegister(e) {
@@ -145,13 +145,11 @@ export default function App() {
     }
   }
 
-  // Statistics calculation for the Dashboard
   const totalBooks = books.length;
   const currentlyReadingCount = books.filter(b => b.status === 'Currently Reading').length;
   const completedCount = books.filter(b => b.status === 'Completed').length;
   const wantToReadCount = books.filter(b => b.status === 'Want to Read').length;
 
-  // Filtered books based on selected tab
   const filteredBooks = books.filter(b => {
     if (filterStatus === 'All') return true;
     return b.status === filterStatus;
@@ -179,7 +177,7 @@ export default function App() {
           <span>PageFlow</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
           {view === 'landing' ? (
             <>
               <button
@@ -214,21 +212,62 @@ export default function App() {
               </button>
             </>
           ) : view === 'tracker' ? (
-            <button
-              onClick={() => setView('landing')}
-              style={{
-                padding: '8px 16px',
-                background: '#a83232',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              Log Out
-            </button>
+            /* USER DROPDOWN MENU */
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#5c4033',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>👤 {selectedUser ? selectedUser.name : 'Account'}</span>
+                <span style={{ fontSize: '0.75rem' }}>▼</span>
+              </button>
+
+              {dropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '42px',
+                  background: '#fffbf7',
+                  border: '1px solid #d4c5b9',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 20px rgba(44,41,37,0.15)',
+                  width: '180px',
+                  zIndex: 20,
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #eee6dc', background: '#f7f4ef' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#8c7b6c', fontWeight: '600' }}>Signed in as</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {selectedUser ? selectedUser.name : 'User'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setDropdownOpen(false); alert('Settings feature coming soon!'); }}
+                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#2c2925', borderBottom: '1px solid #eee6dc' }}
+                  >
+                    ⚙️ Settings
+                  </button>
+                  <button
+                    onClick={() => { setDropdownOpen(false); setView('landing'); }}
+                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#a83232', fontWeight: '600' }}
+                  >
+                    🚪 Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <button
               onClick={() => setView('landing')}
@@ -576,7 +615,7 @@ export default function App() {
       {view === 'tracker' && (
         <div style={{ maxWidth: '900px', width: '100%', margin: '40px auto', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Welcome Banner & Profile Switcher */}
+          {/* Welcome Banner */}
           <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <span style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Dashboard</span>
@@ -584,24 +623,6 @@ export default function App() {
                 Welcome back, {selectedUser ? selectedUser.name : 'Reader'}! 📖
               </h2>
             </div>
-
-            {users.length > 0 && (
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.85rem', color: '#5e564f', fontWeight: '600' }}>Active Reader:</label>
-                <select
-                  value={selectedUser ? selectedUser.id : ''}
-                  onChange={(e) => {
-                    const found = users.find(u => u.id == e.target.value);
-                    setSelectedUser(found);
-                  }}
-                  style={{ padding: '8px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', fontWeight: '600' }}
-                >
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           {/* Quick Stats Summary Cards */}
