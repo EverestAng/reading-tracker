@@ -22,8 +22,8 @@ export default function App() {
   const [internetBooks, setInternetBooks] = useState([]);
   const [isSearchingNet, setIsSearchingNet] = useState(false);
 
-  // Reader States
-  const [activeBookUrl, setActiveBookUrl] = useState(null);
+  // Reader States (Using Local File / ArrayBuffer)
+  const [activeBookData, setActiveBookData] = useState(null);
   const [activeBookTitle, setActiveBookTitle] = useState('');
   const viewerRef = useRef(null);
   const renditionRef = useRef(null);
@@ -113,9 +113,7 @@ export default function App() {
           title: item.title || 'No Title',
           author: item.author_name ? item.author_name.join(', ') : 'Unknown Author',
           pages: item.number_of_pages_median || 0,
-          thumbnail: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : '',
-          // Default EPUB link fallback for sample public domain reading testing inside app
-          read_url: "https://www.gutenberg.org/ebooks/1342.epub3.images"
+          thumbnail: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : ''
         }));
         setInternetBooks(formattedBooks);
       } else {
@@ -129,7 +127,7 @@ export default function App() {
     }
   }
 
-  // Save selected book along with its read_url to Supabase
+  // Save selected book to Supabase
   async function addBookFromInternet(book) {
     if (!selectedUser) return alert('Please select a user profile first!');
 
@@ -140,8 +138,7 @@ export default function App() {
         title: book.title,
         author: book.author,
         pages: book.pages,
-        status: 'Want to Read',
-        read_url: book.read_url
+        status: 'Want to Read'
       }])
       .select();
 
@@ -179,27 +176,32 @@ export default function App() {
     }
   }
 
-  // Launch EPUB Reader View
-  function openReader(book) {
-    if (!book.read_url) {
-      alert('No EPUB file URL available for this book.');
+  // Handle local EPUB file upload for a specific book
+  function handleFileUpload(book, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.epub')) {
+      alert('Please upload a valid .epub file.');
       return;
     }
-    setActiveBookTitle(book.title);
-    setActiveBookUrl(book.read_url);
-    setView('reader');
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const arrayBuffer = e.target.result;
+      setActiveBookTitle(book.title);
+      setActiveBookData(arrayBuffer);
+      setView('reader');
+    };
+    reader.readAsArrayBuffer(file);
   }
 
-  // Initialize EPUB.js inside useEffect when view is 'reader'
-  // Initialize EPUB.js with a CORS proxy wrapper to bypass browser security blocks
+  // Initialize EPUB.js with local ArrayBuffer data
   useEffect(() => {
-    if (view === 'reader' && activeBookUrl && viewerRef.current) {
+    if (view === 'reader' && activeBookData && viewerRef.current) {
       viewerRef.current.innerHTML = '';
       
-      // Wrap the epub url with a CORS proxy to bypass cross-origin restrictions
-      const proxiedUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(activeBookUrl)}`;
-      
-      const book = ePub(proxiedUrl);
+      const book = ePub(activeBookData);
       book.ready.then(() => {
         const rendition = book.renderTo(viewerRef.current, {
           width: "100%",
@@ -210,11 +212,11 @@ export default function App() {
         renditionRef.current = rendition;
         bookRef.current = book;
       }).catch(err => {
-        console.error("Error loading EPUB:", err);
-        viewerRef.current.innerHTML = `<div style="padding: 20px; text-align: center; color: #a83232;">Error loading book content through proxy. Please verify the EPUB link.</div>`;
+        console.error("Error loading local EPUB:", err);
+        viewerRef.current.innerHTML = `<div style="padding: 20px; text-align: center; color: #a83232;">Error parsing EPUB file format. Make sure it's a valid ebook.</div>`;
       });
     }
-  }, [view, activeBookUrl]);
+  }, [view, activeBookData]);
 
   function nextPage() {
     if (renditionRef.current) renditionRef.current.next();
@@ -265,32 +267,14 @@ export default function App() {
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
           {view === 'landing' ? (
             <>
-              <button
-                onClick={() => setView('login')}
-                style={{ background: 'transparent', border: '1px solid #d4c5b9', padding: '8px 16px', borderRadius: '6px', color: '#5c4033', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
-              >
-                Log In
-              </button>
-              <button
-                onClick={() => setView('register')}
-                style={{ padding: '8px 18px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
-              >
-                Register
-              </button>
+              <button onClick={() => setView('login')} style={{ background: 'transparent', border: '1px solid #d4c5b9', padding: '8px 16px', borderRadius: '6px', color: '#5c4033', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>Log In</button>
+              <button onClick={() => setView('register')} style={{ padding: '8px 18px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>Register</button>
             </>
           ) : view === 'reader' ? (
-            <button
-              onClick={() => setView('tracker')}
-              style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}
-            >
-              ← Back to Dashboard
-            </button>
+            <button onClick={() => setView('tracker')} style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}>← Back to Dashboard</button>
           ) : (
             <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
+              <button onClick={() => setDropdownOpen(!dropdownOpen)} style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>👤 {currentName}</span>
                 <span style={{ fontSize: '0.75rem' }}>▼</span>
               </button>
@@ -301,18 +285,7 @@ export default function App() {
                     <div style={{ fontSize: '0.75rem', color: '#8c7b6c', fontWeight: '600' }}>Signed in as</div>
                     <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentEmail}</div>
                   </div>
-                  <button
-                    onClick={() => { setDropdownOpen(false); alert('Settings feature coming soon!'); }}
-                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#2c2925', borderBottom: '1px solid #eee6dc' }}
-                  >
-                    ⚙️ Settings
-                  </button>
-                  <button
-                    onClick={() => { setDropdownOpen(false); setView('landing'); }}
-                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#a83232', fontWeight: '600' }}
-                  >
-                    🚪 Log Out
-                  </button>
+                  <button onClick={() => { setDropdownOpen(false); setView('landing'); }} style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#a83232', fontWeight: '600' }}>🚪 Log Out</button>
                 </div>
               )}
             </div>
@@ -338,23 +311,10 @@ export default function App() {
 
       {/* LANDING PAGE VIEW */}
       {view === 'landing' && (
-        <main style={{ flex: 1 }}>
-          <section style={{ position: 'relative', padding: '90px 8%', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '48px', alignItems: 'center', background: 'linear-gradient(135deg, #f7f4ef 0%, #eee6dc 100%)' }}>
-            <div>
-              <span style={{ display: 'inline-block', padding: '6px 14px', background: '#e4dacf', color: '#5c4033', borderRadius: '999px', fontSize: '0.85rem', fontWeight: '600', marginBottom: '18px', border: '1px solid #d4c5b9' }}>
-                ✨ Eye-Friendly Digital Reading Companion
-              </span>
-              <h1 style={{ fontSize: 'clamp(2.2rem, 4vw, 3.4rem)', fontWeight: '800', lineHeight: 1.15, marginBottom: '20px', color: '#2c2925' }}>
-                Track and read books comfortably in one place.
-              </h1>
-              <p style={{ fontSize: '1.1rem', color: '#5e564f', marginBottom: '32px', maxWidth: '540px' }}>
-                Search books from the internet, organize your library, and read directly inside your built-in e-reader.
-              </p>
-              <button onClick={() => setView('register')} style={{ padding: '14px 28px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>
-                Get Started →
-              </button>
-            </div>
-          </section>
+        <main style={{ flex: 1, padding: '90px 8%', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: '800', color: '#2c2925', marginBottom: '20px' }}>Read and Track Books in One Place.</h1>
+          <p style={{ fontSize: '1.1rem', color: '#5e564f', marginBottom: '32px' }}>A cozy digital sanctuary equipped with a built-in local e-reader and reading progress tracker.</p>
+          <button onClick={() => setView('register')} style={{ padding: '14px 28px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>Get Started →</button>
         </main>
       )}
 
@@ -402,19 +362,17 @@ export default function App() {
         </main>
       )}
 
-      {/* POST-LOGIN DASHBOARD VIEW */}
+      {/* DASHBOARD & LIBRARY VIEW */}
       {view === 'tracker' && (
         <div style={{ maxWidth: '1000px', width: '100%', margin: '40px auto', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Welcome Banner */}
           <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <span style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Dashboard</span>
+              <span style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', textTransform: 'uppercase' }}>Dashboard</span>
               <h2 style={{ color: '#5c4033', margin: '4px 0 0 0', fontSize: '1.8rem' }}>Welcome back, {currentName}! 📖</h2>
             </div>
           </div>
 
-          {/* Quick Stats Summary Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             <div style={{ background: '#f7f4ef', padding: '20px', borderRadius: '10px', border: '1px solid #d4c5b9', textAlign: 'center' }}>
               <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#5c4033' }}>{totalBooks}</div>
@@ -437,20 +395,12 @@ export default function App() {
           {selectedUser && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              {/* INTERNET BOOK SEARCH SECTION */}
+              {/* INTERNET SEARCH */}
               <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
                 <h3 style={{ fontSize: '1.2rem', color: '#5c4033', marginBottom: '12px' }}>🔍 Search Books on the Internet</h3>
                 <form onSubmit={searchInternetBooks} style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                  <input
-                    type="text"
-                    placeholder="Type book title or author (e.g. Atomic Habits, J.K. Rowling)..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ flex: 1, padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
-                  />
-                  <button type="submit" style={{ padding: '12px 24px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>
-                    {isSearchingNet ? 'Searching...' : 'Search'}
-                  </button>
+                  <input type="text" placeholder="Type book title or author..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }} />
+                  <button type="submit" style={{ padding: '12px 24px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>{isSearchingNet ? 'Searching...' : 'Search'}</button>
                 </form>
 
                 {internetBooks.length > 0 && (
@@ -465,12 +415,7 @@ export default function App() {
                         <div style={{ flex: 1, overflow: 'hidden' }}>
                           <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', color: '#2c2925', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title}</h4>
                           <p style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: '#5e564f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.author}</p>
-                          <button
-                            onClick={() => addBookFromInternet(b)}
-                            style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
-                          >
-                            + Add to Library
-                          </button>
+                          <button onClick={() => addBookFromInternet(b)} style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}>+ Add to Library</button>
                         </div>
                       </div>
                     ))}
@@ -478,60 +423,42 @@ export default function App() {
                 )}
               </div>
 
-              {/* MY LIBRARY SECTION */}
+              {/* MY LIBRARY & LOCAL READER UPLOAD */}
               <div style={{ background: '#f7f4ef', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c2925' }}>My Library & Built-in E-Reader</h3>
-                  
-                  {/* Filter Tabs */}
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c2925' }}>My Library & Local E-Reader</h3>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {['All', 'Want to Read', 'Currently Reading', 'Completed'].map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setFilterStatus(tab)}
-                        style={{ padding: '5px 10px', fontSize: '0.78rem', fontWeight: '600', borderRadius: '6px', cursor: 'pointer', background: filterStatus === tab ? '#5c4033' : '#ede7df', color: filterStatus === tab ? '#fff' : '#5e564f', border: '1px solid #d4c5b9' }}
-                      >
-                        {tab}
-                      </button>
+                      <button key={tab} onClick={() => setFilterStatus(tab)} style={{ padding: '5px 10px', fontSize: '0.78rem', fontWeight: '600', borderRadius: '6px', cursor: 'pointer', background: filterStatus === tab ? '#5c4033' : '#ede7df', color: filterStatus === tab ? '#fff' : '#5e564f', border: '1px solid #d4c5b9' }}>{tab}</button>
                     ))}
                   </div>
                 </div>
 
                 {filteredBooks.length === 0 ? (
-                  <p style={{ color: '#5e564f', fontSize: '0.95rem', textAlign: 'center', padding: '30px 0' }}>No books found in this category. Search above to add some!</p>
+                  <p style={{ color: '#5e564f', fontSize: '0.95rem', textAlign: 'center', padding: '30px 0' }}>No books found. Search above to add some!</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
                     {filteredBooks.map(book => (
-                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
+                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: '1px solid #d4c5b9' }}>
                         <div>
                           <h4 style={{ margin: '0 0 3px 0', fontSize: '1.05rem', color: '#2c2925' }}>{book.title}</h4>
                           <p style={{ margin: '0 0 6px 0', color: '#5e564f', fontSize: '0.85rem' }}>by {book.author}</p>
                           <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '999px', background: '#eee6dc', color: '#2c2925', fontWeight: '600' }}>{book.status}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          {book.read_url && (
-                            <button
-                              onClick={() => openReader(book)}
-                              style={{ padding: '6px 12px', background: '#2b5c8f', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
-                            >
-                              📖 Read Inside App
-                            </button>
-                          )}
-                          <select
-                            value={book.status}
-                            onChange={(e) => updateStatus(book.id, e.target.value)}
-                            style={{ padding: '6px 8px', background: '#f7f4ef', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', fontSize: '0.8rem' }}
-                          >
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {/* File Upload for reading */}
+                          <label style={{ padding: '6px 12px', background: '#2b5c8f', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', display: 'inline-block' }}>
+                            📁 Upload & Read EPUB
+                            <input type="file" accept=".epub" onChange={(e) => handleFileUpload(book, e)} style={{ display: 'none' }} />
+                          </label>
+
+                          <select value={book.status} onChange={(e) => updateStatus(book.id, e.target.value)} style={{ padding: '6px 8px', background: '#f7f4ef', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px', fontSize: '0.8rem' }}>
                             <option value="Want to Read">Want to Read</option>
                             <option value="Currently Reading">Reading</option>
                             <option value="Completed">Completed</option>
                           </select>
-                          <button
-                            onClick={() => deleteBook(book.id)}
-                            style={{ padding: '6px 10px', background: '#a83232', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}
-                          >
-                            Delete
-                          </button>
+                          
+                          <button onClick={() => deleteBook(book.id)} style={{ padding: '6px 10px', background: '#a83232', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>Delete</button>
                         </div>
                       </div>
                     ))}
