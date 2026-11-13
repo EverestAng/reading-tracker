@@ -60,7 +60,6 @@ export default function App() {
       return;
     }
 
-    // I-save ang bagong reader sa Supabase users table
     const { data, error } = await supabase
       .from('users')
       .insert([{ username: regUsername }])
@@ -276,6 +275,7 @@ export default function App() {
                 Organize your reading list, log your book pages, and enjoy a warm, glare-free interface designed to keep your eyes relaxed during long reading sessions.
               </p>
 
+              {/* ISANG GET STARTED BUTTON NA LANG SA BABA NG HERO */}
               <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => setView('register')}
@@ -292,21 +292,6 @@ export default function App() {
                   }}
                 >
                   Get Started →
-                </button>
-                <button
-                  onClick={() => setView('login')}
-                  style={{
-                    padding: '14px 24px',
-                    background: '#eee6dc',
-                    color: '#2c2925',
-                    border: '1px solid #d4c5b9',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Log In
                 </button>
               </div>
             </div>
@@ -366,7 +351,7 @@ export default function App() {
         </main>
       )}
 
-      {/* LOGIN PAGE VIEW (50-50 Split Grid Layout) */}
+      {/* LOGIN PAGE VIEW */}
       {view === 'login' && (
         <main style={{
           flex: 1,
@@ -466,7 +451,7 @@ export default function App() {
         </main>
       )}
 
-      {/* REGISTER PAGE VIEW (50-50 Split Grid Layout) */}
+      {/* REGISTER PAGE VIEW */}
       {view === 'register' && (
         <main style={{
           flex: 1,
