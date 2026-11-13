@@ -116,7 +116,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Navigation Bar - Clean, no extra buttons */}
+      {/* Top Navigation Bar with Logo and Login Button */}
       <nav style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -138,17 +138,20 @@ export default function App() {
 
         <div>
           <button
-            onClick={() => setView('landing')}
+            onClick={() => setView(view === 'landing' ? 'tracker' : 'landing')}
+            className="cta-btn"
             style={{
-              background: 'transparent',
+              padding: '8px 18px',
+              background: '#5c4033',
+              color: '#fff',
               border: 'none',
-              color: view === 'landing' ? '#5c4033' : '#6b635b',
-              fontWeight: view === 'landing' ? '600' : '400',
+              borderRadius: '6px',
+              fontWeight: '600',
               cursor: 'pointer',
               fontSize: '0.95rem'
             }}
           >
-            Home
+            {view === 'landing' ? 'Login' : 'Back to Home'}
           </button>
         </div>
       </nav>
