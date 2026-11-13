@@ -212,385 +212,6 @@ export default function App() {
               </button>
             </>
           ) : view === 'tracker' ? (
-            /* DYNAMIC USER DROPDOWN MENU */
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                style={{
-                  padding: '8px 16px',
-                  background: '#5c4033',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>👤 {selectedUser ? selectedUser.name : 'Account'}</span>
-                <span style={{ fontSize: '0.75rem' }}>▼</span>
-              </button>
-
-              {dropdownOpen && (
-                <div style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '42px',
-                  background: '#fffbf7',
-                  border: '1px solid #d4c5b9',
-                  borderRadius: '8px',
-                  boxShadow: '0 8px 20px rgba(44,41,37,0.15)',
-                  width: '180px',
-                  zIndex: 20,
-                  overflow: 'hidden'
-                }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #eee6dc', background: '#f7f4ef' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#8c7b6c', fontWeight: '600' }}>Signed in as</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {selectedUser ? selectedUser.name : 'User'}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setDropdownOpen(false); alert('Settings feature coming soon!'); }}
-                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#2c2925', borderBottom: '1px solid #eee6dc' }}
-                  >
-                    ⚙️ Settings
-                  </button>
-                  <button
-                    onClick={() => { setDropdownOpen(false); setView('landing'); }}
-                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#a83232', fontWeight: '600' }}
-                  >
-                    🚪 Log Out
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              onClick={() => setView('landing')}
-              style={{
-                padding: '8px 16px',
-                background: '#eee6dc',
-                color: '#2c2925',
-                border: '1px solid #d4c5b9',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              ← Back to Home
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {/* LANDING PAGE VIEW */}
-      {view === 'landing' && (
-        <main style={{ flex: 1 }}>
-          <section style={{
-            position: 'relative',
-            padding: '90px 8%',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '48px',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #f7f4ef 0%, #eee6dc 100%)'
-          }}>
-            <div>
-              <span style={{
-                display: 'inline-block',
-                padding: '6px 14px',
-                background: '#e4dacf',
-                color: '#5c4033',
-                borderRadius: '999px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                marginBottom: '18px',
-                border: '1px solid #d4c5b9'
-              }}>
-                ✨ Eye-Friendly Digital Reading Companion
-              </span>
-              <h1 style={{
-                fontSize: 'clamp(2.2rem, 4vw, 3.4rem)',
-                fontWeight: '800',
-                lineHeight: 1.15,
-                marginBottom: '20px',
-                color: '#2c2925'
-              }}>
-                Track every page of your reading journey comfortably.
-              </h1>
-              <p style={{
-                fontSize: '1.1rem',
-                color: '#5e564f',
-                marginBottom: '32px',
-                maxWidth: '540px'
-              }}>
-                Organize your reading list, log your book pages, and enjoy a warm, glare-free interface designed to keep your eyes relaxed during long reading sessions.
-              </p>
-
-              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setView('register')}
-                  style={{
-                    padding: '14px 28px',
-                    background: '#5c4033',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Get Started →
-                </button>
-              </div>
-            </div>
-
-            <div style={{ position: 'relative' }}>
-              <div style={{
-                borderRadius: '16px',
-                overflow: 'hidden',
-                boxShadow: '0 20px 40px -10px rgba(44, 41, 37, 0.15)',
-                border: '1px solid #d4c5b9'
-              }}>
-                <img
-                  src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
-                  alt="Cozy stack of books and reading setup"
-                  style={{ width: '100%', height: '380px', objectFit: 'cover', display: 'block' }}
-                />
-              </div>
-            </div>
-          </section>
-
-          <section id="features" style={{ padding: '70px 8%', background: '#eee8e0', borderTop: '1px solid #dcd4cc' }}>
-            <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 50px auto' }}>
-              <h2 style={{Ay oo nga, nakita ko sa screenshot! Naka-hardcode lang na "User" kaya hindi lumalabas yung totoong pangalan mula sa database. Pwede nating kunin nang direkta sa `selectedUser.name` para kung sino man ang nag-log in o naka-select, ang totoong pangalan niya ang lalabas sa button at sa dropdown menu.
-
-Heto angusin natin ang `src/App.jsx`. Palitan mo lang ng buo ang laman:
-
-### I-update ang `src/App.jsx`
-
-```jsx
-import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
-
-export default function App() {
-  const [view, setView] = useState('landing'); // 'landing', 'login', 'register', or 'tracker'
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [books, setBooks] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  // Login form states
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Register form states
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-
-  // Form states for new book
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [pages, setPages] = useState('');
-  const [status, setStatus] = useState('Want to Read');
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    if (selectedUser) {
-      fetchBooks(selectedUser.id);
-    } else {
-      setBooks([]);
-    }
-  }, [selectedUser]);
-
-  async function fetchUsers() {
-    const { data, error } = await supabase.from('users').select('*');
-    if (error) console.error('Error fetching users:', error);
-    else if (data && data.length > 0) {
-      setUsers(data);
-      if (!selectedUser) setSelectedUser(data[0]);
-    }
-  }
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    if (!loginEmail.trim()) {
-      alert('Please enter your email or name.');
-      return;
-    }
-    const found = users.find(u => u.email === loginEmail || u.name.toLowerCase() === loginEmail.toLowerCase());
-    if (found) {
-      setSelectedUser(found);
-    } else if (users.length > 0) {
-      setSelectedUser(users[0]);
-    }
-    setView('tracker');
-    setDropdownOpen(false);
-  }
-
-  async function handleRegister(e) {
-    e.preventDefault();
-    if (!regName.trim() || !regEmail.trim()) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{ name: regName, email: regEmail, password: regPassword }])
-      .select();
-
-    if (error) {
-      alert('Error registering user: ' + error.message);
-    } else if (data && data.length > 0) {
-      // I-update ang listahan ng users at piliin ito
-      setUsers([...users, data[0]]);
-      setSelectedUser(data[0]);
-      alert('Registration successful! Welcome to PageFlow.');
-      setView('tracker');
-    }
-  }
-
-  async function fetchBooks(userId) {
-    const { data, error } = await supabase
-      .from('books')
-      .select('*')
-      .eq('user_id', userId);
-    if (error) console.error('Error fetching books:', error);
-    else setBooks(data || []);
-  }
-
-  async function addBook(e) {
-    e.preventDefault();
-    if (!selectedUser) return alert('Please select a user profile first!');
-    if (!title.trim() || !author.trim()) return alert('Please provide both title and author.');
-
-    const { data, error } = await supabase
-      .from('books')
-      .insert([{
-        user_id: selectedUser.id,
-        title,
-        author,
-        pages: parseInt(pages) || 0,
-        status
-      }])
-      .select();
-
-    if (error) {
-      alert('Error adding book: ' + error.message);
-    } else if (data) {
-      setBooks([data[0], ...books]);
-      setTitle('');
-      setAuthor('');
-      setPages('');
-      setStatus('Want to Read');
-    }
-  }
-
-  async function updateStatus(id, newStatus) {
-    const { error } = await supabase
-      .from('books')
-      .update({ status: newStatus })
-      .eq('id', id);
-
-    if (error) {
-      alert('Error updating status: ' + error.message);
-    } else {
-      setBooks(books.map(b => b.id === id ? { ...b, status: newStatus } : b));
-    }
-  }
-
-  async function deleteBook(id) {
-    const { error } = await supabase
-      .from('books')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert('Error deleting book: ' + error.message);
-    } else {
-      setBooks(books.filter(b => b.id !== id));
-    }
-  }
-
-  const totalBooks = books.length;
-  const currentlyReadingCount = books.filter(b => b.status === 'Currently Reading').length;
-  const completedCount = books.filter(b => b.status === 'Completed').length;
-  const wantToReadCount = books.filter(b => b.status === 'Want to Read').length;
-
-  const filteredBooks = books.filter(b => {
-    if (filterStatus === 'All') return true;
-    return b.status === filterStatus;
-  });
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f7f4ef', color: '#2c2925' }}>
-      {/* Top Navigation Bar */}
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '18px 8%',
-        background: '#ede7df',
-        borderBottom: '1px solid #dcd4cc',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10
-      }}>
-        <div
-          onClick={() => setView('landing')}
-          style={{ fontSize: '1.3rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#2c2925' }}
-        >
-          <span>📚</span>
-          <span>PageFlow</span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
-          {view === 'landing' ? (
-            <>
-              <button
-                onClick={() => setView('login')}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #d4c5b9',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  color: '#5c4033',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
-              >
-                Log In
-              </button>
-              <button
-                onClick={() => setView('register')}
-                style={{
-                  padding: '8px 18px',
-                  background: '#5c4033',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
-              >
-                Register
-              </button>
-            </>
-          ) : view === 'tracker' ? (
             /* DYNAMIC USER ACCOUNT DROPDOWN MENU */
             <div style={{ position: 'relative' }}>
               <button
@@ -738,7 +359,7 @@ export default function App() {
                 border: '1px solid #d4c5b9'
               }}>
                 <img
-                  src="[https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80](https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80)"
+                  src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
                   alt="Cozy stack of books and reading setup"
                   style={{ width: '100%', height: '380px', objectFit: 'cover', display: 'block' }}
                 />
@@ -758,7 +379,7 @@ export default function App() {
               gap: '24px'
             }}>
               <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img src="[https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80](https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80)" alt="Library" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80" alt="Library" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Organized Collection</h3>
                   <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Seamlessly sort your books into different reading statuses.</p>
@@ -766,7 +387,7 @@ export default function App() {
               </div>
 
               <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img src="[https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80](https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80)" alt="Journal" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80" alt="Journal" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Multi-Reader Profiles</h3>
                   <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Create custom reader profiles within a single workspace.</p>
@@ -774,7 +395,7 @@ export default function App() {
               </div>
 
               <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img src="[https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80](https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80)" alt="Library interior" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                <img src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80" alt="Library interior" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Real-Time Cloud Save</h3>
                   <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Every change is instantly persisted to your database.</p>
@@ -859,7 +480,7 @@ export default function App() {
 
           <div style={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
             <img
-              src="[https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80](https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80)"
+              src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
               alt="Cozy stack of books"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
@@ -967,7 +588,7 @@ export default function App() {
 
           <div style={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
             <img
-              src="[https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1000&q=80](https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1000&q=80)"
+              src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1000&q=80"
               alt="Cozy library books stack"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
@@ -1112,7 +733,7 @@ export default function App() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
                     {filteredBooks.map(book => (
-                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-linejoin', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
+                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
                         <div>
                           <h4 style={{ margin: '0 0 3px 0', fontSize: '1.05rem', color: '#2c2925' }}>{book.title}</h4>
                           <p style={{ margin: '0 0 6px 0', color: '#5e564f', fontSize: '0.85rem' }}>by {book.author} • {book.pages || 0} pages</p>
