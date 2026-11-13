@@ -16,10 +16,10 @@ export default function App() {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [pages, setPages] = useState('');
-  const [status, setStatus] = useState('Want to Read');
+  // States for Internet Book Search (Google Books API)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [internetBooks, setInternetBooks] = useState([]);
+  const [isSearchingNet, setIsSearchingNet] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -27,7 +27,7 @@ export default function App() {
 
   useEffect(() => {
     if (selectedUser) {
-      console.log("Active User Data:", selectedUser); // Para makita mo sa console kung ano ang laman
+      console.log("Active User Data:", selectedUser);
       fetchBooks(selectedUser.id);
     } else {
       setBooks([]);
@@ -91,19 +91,47 @@ export default function App() {
     else setBooks(data || []);
   }
 
-  async function addBook(e) {
+  // Function to search books from the internet using the Google Books API
+  async function searchInternetBooks(e) {
     e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearchingNet(true);
+    try {
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=6`);
+      const data = await res.json();
+      
+      if (data.items) {
+        const formattedBooks = data.items.map(item => ({
+          title: item.volumeInfo.title || 'No Title',
+          author: item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Unknown Author',
+          pages: item.volumeInfo.pageCount || 0,
+          thumbnail: item.volumeInfo.imageLinks?.thumbnail || ''
+        }));
+        setInternetBooks(formattedBooks);
+      } else {
+        setInternetBooks([]);
+      }
+    } catch (err) {
+      console.error('Error searching books:', err);
+      alert('An error occurred while searching books from the internet.');
+    } finally {
+      setIsSearchingNet(false);
+    }
+  }
+
+  // Function to save the selected internet book directly to Supabase
+  async function addBookFromInternet(book) {
     if (!selectedUser) return alert('Please select a user profile first!');
-    if (!title.trim() || !author.trim()) return alert('Please provide both title and author.');
 
     const { data, error } = await supabase
       .from('books')
       .insert([{
         user_id: selectedUser.id,
-        title,
-        author,
-        pages: parseInt(pages) || 0,
-        status
+        title: book.title,
+        author: book.author,
+        pages: book.pages,
+        status: 'Want to Read'
       }])
       .select();
 
@@ -111,10 +139,7 @@ export default function App() {
       alert('Error adding book: ' + error.message);
     } else if (data) {
       setBooks([data[0], ...books]);
-      setTitle('');
-      setAuthor('');
-      setPages('');
-      setStatus('Want to Read');
+      alert(`Successfully added "${book.title}" to your library!`);
     }
   }
 
@@ -154,7 +179,6 @@ export default function App() {
     return b.status === filterStatus;
   });
 
-  // Safe getters para hindi mag-error kahit maantala ang fetch
   const currentName = selectedUser?.name || users[0]?.name || 'Account';
   const currentEmail = selectedUser?.email || users[0]?.email || 'No email registered';
 
@@ -174,7 +198,6 @@ export default function App() {
       }}>
         <div
           onClick={() => {
-            // Kung naka-log in na, manatili sa tracker dashboard sa halip na bumalik sa landing
             if (view === 'tracker') {
               return;
             }
@@ -492,21 +515,6 @@ export default function App() {
               alt="Cozy stack of books"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
-            <div style={{
-              position: 'absolute',
-              bottom: '40px',
-              left: '40px',
-              right: '40px',
-              color: '#fff',
-              textShadow: '0 2px 10px rgba(0,0,0,0.6)'
-            }}>
-              <h2 style={{ fontSize: '2rem', fontWeight: '800', lineHeight: 1.2, marginBottom: '8px' }}>
-                YOUR READING, SIMPLIFIED.
-              </h2>
-              <p style={{ fontSize: '0.95rem', opacity: 0.95 }}>
-                Keep track of every chapter, book, and milestone seamlessly.
-              </p>
-            </div>
           </div>
         </main>
       )}
@@ -600,28 +608,13 @@ export default function App() {
               alt="Cozy library books stack"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
-            <div style={{
-              position: 'absolute',
-              bottom: '40px',
-              left: '40px',
-              right: '40px',
-              color: '#fff',
-              textShadow: '0 2px 10px rgba(0,0,0,0.6)'
-            }}>
-              <h2 style={{ fontSize: '2rem', fontWeight: '800', lineHeight: 1.2, marginBottom: '8px' }}>
-                YOUR LIBRARY AWAITS.
-              </h2>
-              <p style={{ fontSize: '0.95rem', opacity: 0.95 }}>
-                Create your profile and start logging your favorite books today.
-              </p>
-            </div>
           </div>
         </main>
       )}
 
       {/* POST-LOGIN DASHBOARD VIEW */}
       {view === 'tracker' && (
-        <div style={{ maxWidth: '900px', width: '100%', margin: '40px auto', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ maxWidth: '1000px', width: '100%', margin: '40px auto', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* Welcome Banner */}
           <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -654,61 +647,53 @@ export default function App() {
           </div>
 
           {selectedUser && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', alignItems: 'start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              {/* Left Column: Add New Book Form */}
-              <div style={{ background: '#f7f4ef', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
-                <h3 style={{ fontSize: '1.1rem', color: '#2c2925', marginBottom: '16px' }}>+ Add a New Book</h3>
-                <form onSubmit={addBook} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Book Title *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Atomic Habits"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Author *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. James Clear"
-                      value={author}
-                      onChange={(e) => setAuthor(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Total Pages</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 320"
-                      value={pages}
-                      onChange={(e) => setPages(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#5e564f' }}>Status</label>
-                    <select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '6px' }}
-                    >
-                      <option value="Want to Read">Want to Read</option>
-                      <option value="Currently Reading">Currently Reading</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                  </div>
-                  <button type="submit" style={{ padding: '12px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', marginTop: '6px' }}>
-                    Save Book
+              {/* INTERNET BOOK SEARCH SECTION */}
+              <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
+                <h3 style={{ fontSize: '1.2rem', color: '#5c4033', marginBottom: '12px' }}>🔍 Search Books on the Internet</h3>
+                <form onSubmit={searchInternetBooks} style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                  <input
+                    type="text"
+                    placeholder="Type book title or author (e.g. Atomic Habits, J.K. Rowling)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ flex: 1, padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
+                  />
+                  <button
+                    type="submit"
+                    style={{ padding: '12px 24px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    {isSearchingNet ? 'Searching...' : 'Search'}
                   </button>
                 </form>
+
+                {internetBooks.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', maxHeight: '400px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {internetBooks.map((b, idx) => (
+                      <div key={idx} style={{ background: '#fffbf7', padding: '12px', borderRadius: '8px', border: '1px solid #d4c5b9', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        {b.thumbnail ? (
+                          <img src={b.thumbnail} alt={b.title} style={{ width: '50px', height: '70px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #d4c5b9' }} />
+                        ) : (
+                          <div style={{ width: '50px', height: '70px', background: '#eee6dc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', borderRadius: '4px' }}>📚</div>
+                        )}
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', color: '#2c2925', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title}</h4>
+                          <p style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: '#5e564f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.author}</p>
+                          <button
+                            onClick={() => addBookFromInternet(b)}
+                            style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                          >
+                            + Add to Library
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Right Column: Book List with Status Filter Tabs */}
+              {/* MY LIBRARY SECTION */}
               <div style={{ background: '#f7f4ef', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c2925' }}>My Library</h3>
@@ -737,7 +722,7 @@ export default function App() {
                 </div>
 
                 {filteredBooks.length === 0 ? (
-                  <p style={{ color: '#5e564f', fontSize: '0.95rem', textAlign: 'center', padding: '40px 0' }}>No books found in this category.</p>
+                  <p style={{ color: '#5e564f', fontSize: '0.95rem', textAlign: 'center', padding: '30px 0' }}>No books found in this category. Search above to add some!</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
                     {filteredBooks.map(book => (
