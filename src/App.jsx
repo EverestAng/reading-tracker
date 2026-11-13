@@ -16,7 +16,7 @@ export default function App() {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  // States for Internet Book Search (Google Books API)
+  // States for Internet Book Search (Open Library API)
   const [searchQuery, setSearchQuery] = useState('');
   const [internetBooks, setInternetBooks] = useState([]);
   const [isSearchingNet, setIsSearchingNet] = useState(false);
@@ -27,7 +27,6 @@ export default function App() {
 
   useEffect(() => {
     if (selectedUser) {
-      console.log("Active User Data:", selectedUser);
       fetchBooks(selectedUser.id);
     } else {
       setBooks([]);
@@ -91,8 +90,7 @@ export default function App() {
     else setBooks(data || []);
   }
 
-  // Function to search books from the internet using the Google Books API
-  // Function to search books using Open Library API (bypasses Google's 429 rate limit)
+  // Search books using Open Library API with direct Read Online link
   async function searchInternetBooks(e) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -107,7 +105,8 @@ export default function App() {
           title: item.title || 'No Title',
           author: item.author_name ? item.author_name.join(', ') : 'Unknown Author',
           pages: item.number_of_pages_median || 0,
-          thumbnail: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : ''
+          thumbnail: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : '',
+          read_url: item.key ? `https://openlibrary.org${item.key}` : `https://openlibrary.org/search?q=${encodeURIComponent(item.title)}`
         }));
         setInternetBooks(formattedBooks);
       } else {
@@ -115,13 +114,13 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error searching books:', err);
-      alert('An error occurred while searching books.');
+      alert('An error occurred while searching books from the internet.');
     } finally {
       setIsSearchingNet(false);
     }
   }
 
-  // Function to save the selected internet book directly to Supabase
+  // Save selected book along with its read_url to Supabase
   async function addBookFromInternet(book) {
     if (!selectedUser) return alert('Please select a user profile first!');
 
@@ -132,7 +131,8 @@ export default function App() {
         title: book.title,
         author: book.author,
         pages: book.pages,
-        status: 'Want to Read'
+        status: 'Want to Read',
+        read_url: book.read_url
       }])
       .select();
 
@@ -681,12 +681,22 @@ export default function App() {
                         <div style={{ flex: 1, overflow: 'hidden' }}>
                           <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', color: '#2c2925', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title}</h4>
                           <p style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: '#5e564f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.author}</p>
-                          <button
-                            onClick={() => addBookFromInternet(b)}
-                            style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
-                          >
-                            + Add to Library
-                          </button>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => addBookFromInternet(b)}
+                              style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                              + Add
+                            </button>
+                            <a
+                              href={b.read_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ padding: '5px 10px', background: '#2b5c8f', color: '#fff', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', textDecoration: 'none' }}
+                            >
+                              📖 Preview
+                            </a>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -727,7 +737,7 @@ export default function App() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
                     {filteredBooks.map(book => (
-                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
+                      <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
                         <div>
                           <h4 style={{ margin: '0 0 3px 0', fontSize: '1.05rem', color: '#2c2925' }}>{book.title}</h4>
                           <p style={{ margin: '0 0 6px 0', color: '#5e564f', fontSize: '0.85rem' }}>by {book.author} • {book.pages || 0} pages</p>
@@ -736,6 +746,14 @@ export default function App() {
                           </span>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <a
+                            href={book.read_url || `https://openlibrary.org/search?q=${encodeURIComponent(book.title)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ padding: '6px 12px', background: '#2b5c8f', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', textDecoration: 'none' }}
+                          >
+                            📖 Read Online
+                          </a>
                           <select
                             value={book.status}
                             onChange={(e) => updateStatus(book.id, e.target.value)}
