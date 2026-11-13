@@ -10,9 +10,11 @@ export default function App() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  // Separate Login States
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
+  // Separate Register States
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -60,11 +62,11 @@ export default function App() {
     const found = users.find(u => u.email === loginEmail || u.name.toLowerCase() === loginEmail.toLowerCase());
     if (found) {
       setSelectedUser(found);
-    } else if (users.length > 0) {
-      setSelectedUser(users[0]);
+      setView('tracker');
+      setDropdownOpen(false);
+    } else {
+      alert('User not found. Please register first or check your credentials.');
     }
-    setView('tracker');
-    setDropdownOpen(false);
   }
 
   async function handleRegister(e) {
@@ -446,7 +448,6 @@ export default function App() {
                           <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '999px', background: '#eee6dc', color: '#2c2925', fontWeight: '600' }}>{book.status}</span>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                          {/* File Upload for reading */}
                           <label style={{ padding: '6px 12px', background: '#2b5c8f', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', display: 'inline-block' }}>
                             📁 Upload & Read EPUB
                             <input type="file" accept=".epub" onChange={(e) => handleFileUpload(book, e)} style={{ display: 'none' }} />
