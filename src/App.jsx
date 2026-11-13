@@ -173,7 +173,13 @@ export default function App() {
         zIndex: 10
       }}>
         <div
-          onClick={() => setView('landing')}
+          onClick={() => {
+            // Kung naka-log in na, manatili sa tracker dashboard sa halip na bumalik sa landing
+            if (view === 'tracker') {
+              return;
+            }
+            setView('landing');
+          }}
           style={{ fontSize: '1.3rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#2c2925' }}
         >
           <span>📚</span>
