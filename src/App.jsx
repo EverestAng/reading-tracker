@@ -45,7 +45,6 @@ export default function App() {
       alert('Please enter your email or username.');
       return;
     }
-    // Pagkatapos mag-login, dadalhin na sa tracker dashboard
     setView('tracker');
   }
 
@@ -173,7 +172,6 @@ export default function App() {
       {/* LANDING PAGE VIEW */}
       {view === 'landing' && (
         <main style={{ flex: 1 }}>
-          {/* Hero Section */}
           <section style={{
             position: 'relative',
             padding: '90px 8%',
@@ -250,7 +248,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Hero Image Showcase */}
             <div style={{ position: 'relative' }}>
               <div style={{
                 borderRadius: '16px',
@@ -267,7 +264,6 @@ export default function App() {
             </div>
           </section>
 
-          {/* Features Section */}
           <section id="features" style={{ padding: '70px 8%', background: '#eee8e0', borderTop: '1px solid #dcd4cc' }}>
             <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 50px auto' }}>
               <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '12px', color: '#2c2925' }}>Why Choose PageFlow?</h2>
@@ -307,9 +303,15 @@ export default function App() {
         </main>
       )}
 
-      {/* LOGIN PAGE VIEW (Split Layout Matching Screenshot) */}
+      {/* LOGIN PAGE VIEW (Proper 50-50 Split Grid Layout) */}
       {view === 'login' && (
-        <main style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', background: '#f7f4ef' }}>
+        <main style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          background: '#f7f4ef',
+          minHeight: 'calc(100vh - 73px)'
+        }}>
           {/* Left Form Section */}
           <div style={{ padding: '60px 8%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
@@ -378,12 +380,12 @@ export default function App() {
             </form>
           </div>
 
-          {/* Right Image Section */}
-          <div style={{ display: 'none', '@media (min-width: 768px)': { display: 'block' }, position: 'relative', minHeight: '500px', overflow: 'hidden' }}>
+          {/* Right Image Section (Stack of Books Photo) */}
+          <div style={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
             <img
               src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
-              alt="Reading setup scenic"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              alt="Cozy stack of books"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
             <div style={{
               position: 'absolute',
@@ -391,12 +393,12 @@ export default function App() {
               left: '40px',
               right: '40px',
               color: '#fff',
-              textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+              textShadow: '0 2px 10px rgba(0,0,0,0.6)'
             }}>
               <h2 style={{ fontSize: '2rem', fontWeight: '800', lineHeight: 1.2, marginBottom: '8px' }}>
                 YOUR READING, SIMPLIFIED.
               </h2>
-              <p style={{ fontSize: '0.95rem', opacity: 0.9 }}>
+              <p style={{ fontSize: '0.95rem', opacity: 0.95 }}>
                 Keep track of every chapter, book, and milestone seamlessly.
               </p>
             </div>
