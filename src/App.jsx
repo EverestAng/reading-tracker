@@ -191,10 +191,15 @@ export default function App() {
   }
 
   // Initialize EPUB.js inside useEffect when view is 'reader'
+  // Initialize EPUB.js with a CORS proxy wrapper to bypass browser security blocks
   useEffect(() => {
     if (view === 'reader' && activeBookUrl && viewerRef.current) {
       viewerRef.current.innerHTML = '';
-      const book = ePub(activeBookUrl);
+      
+      // Wrap the epub url with a CORS proxy to bypass cross-origin restrictions
+      const proxiedUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(activeBookUrl)}`;
+      
+      const book = ePub(proxiedUrl);
       book.ready.then(() => {
         const rendition = book.renderTo(viewerRef.current, {
           width: "100%",
@@ -206,7 +211,7 @@ export default function App() {
         bookRef.current = book;
       }).catch(err => {
         console.error("Error loading EPUB:", err);
-        viewerRef.current.innerHTML = `<div style="padding: 20px; text-align: center; color: #a83232;">Error loading book content. File format might be restricted by CORS policy.</div>`;
+        viewerRef.current.innerHTML = `<div style="padding: 20px; text-align: center; color: #a83232;">Error loading book content through proxy. Please verify the EPUB link.</div>`;
       });
     }
   }, [view, activeBookUrl]);
