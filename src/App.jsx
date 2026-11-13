@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 export default function App() {
-  const [view, setView] = useState('landing'); // 'landing' or 'tracker'
+  const [view, setView] = useState('landing'); // 'landing', 'login', or 'tracker'
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [books, setBooks] = useState([]);
   const [newUsername, setNewUsername] = useState('');
+
+  // Login form states
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Form states for new book
   const [title, setTitle] = useState('');
@@ -33,6 +37,16 @@ export default function App() {
       setUsers(data);
       setSelectedUser(data[0]);
     }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    if (!loginEmail.trim()) {
+      alert('Please enter your email or username.');
+      return;
+    }
+    // Pagkatapos mag-login, dadalhin na sa tracker dashboard
+    setView('tracker');
   }
 
   async function createUser(e) {
@@ -116,7 +130,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Navigation Bar with Logo and Login Button */}
+      {/* Top Navigation Bar */}
       <nav style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -138,7 +152,7 @@ export default function App() {
 
         <div>
           <button
-            onClick={() => setView(view === 'landing' ? 'tracker' : 'landing')}
+            onClick={() => setView(view === 'landing' ? 'login' : 'landing')}
             className="cta-btn"
             style={{
               padding: '8px 18px',
@@ -151,13 +165,13 @@ export default function App() {
               fontSize: '0.95rem'
             }}
           >
-            {view === 'landing' ? 'Login' : 'Back to Home'}
+            {view === 'landing' ? 'Log In' : 'Back to Home'}
           </button>
         </div>
       </nav>
 
       {/* LANDING PAGE VIEW */}
-      {view === 'landing' ? (
+      {view === 'landing' && (
         <main style={{ flex: 1 }}>
           {/* Hero Section */}
           <section style={{
@@ -203,7 +217,7 @@ export default function App() {
 
               <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <button
-                  onClick={() => setView('tracker')}
+                  onClick={() => setView('login')}
                   className="cta-btn"
                   style={{
                     padding: '14px 28px',
@@ -265,55 +279,133 @@ export default function App() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
               gap: '24px'
             }}>
-              {/* Card 1 */}
               <div className="feature-card" style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img
-                  src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80"
-                  alt="Library bookshelves"
-                  style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-                />
+                <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80" alt="Library" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Organized Collection</h3>
-                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>
-                    Seamlessly sort your books into <em>Want to Read</em>, <em>Currently Reading</em>, and <em>Completed</em> statuses.
-                  </p>
+                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Seamlessly sort your books into different reading statuses.</p>
                 </div>
               </div>
 
-              {/* Card 2 */}
               <div className="feature-card" style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img
-                  src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80"
-                  alt="Reading journal and coffee"
-                  style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-                />
+                <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80" alt="Journal" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Multi-Reader Profiles</h3>
-                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>
-                    Create custom reader profiles or manage different accounts within a single workspace without mixing libraries.
-                  </p>
+                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Create custom reader profiles within a single workspace.</p>
                 </div>
               </div>
 
-              {/* Card 3 */}
               <div className="feature-card" style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img
-                  src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80"
-                  alt="Classic library interior"
-                  style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-                />
+                <img src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80" alt="Library interior" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
                   <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Real-Time Cloud Save</h3>
-                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>
-                    Every change and update is instantly persisted to your secure cloud database.
-                  </p>
+                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Every change is instantly persisted to your database.</p>
                 </div>
               </div>
             </div>
           </section>
         </main>
-      ) : (
-        /* TRACKER VIEW */
+      )}
+
+      {/* LOGIN PAGE VIEW (Split Layout Matching Screenshot) */}
+      {view === 'login' && (
+        <main style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', background: '#f7f4ef' }}>
+          {/* Left Form Section */}
+          <div style={{ padding: '60px 8%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Reader Login
+            </div>
+            <h1 style={{ fontSize: '2.4rem', fontWeight: '800', color: '#2c2925', marginBottom: '8px' }}>
+              Welcome back
+            </h1>
+            <p style={{ color: '#5e564f', marginBottom: '32px', fontSize: '0.95rem' }}>
+              Sign in to access your personal reading list and library.
+            </p>
+
+            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
+                  Email Address or Username *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. yourname@gmail.com"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••••••"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#5e564f', cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ accentColor: '#5c4033' }} /> Remember me
+                </label>
+                <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Password reset link sent!'); }} style={{ color: '#5c4033', textDecoration: 'none', fontWeight: '600' }}>
+                  Forgot password?
+                </a>
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  padding: '14px',
+                  background: '#2c2925',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  marginTop: '10px',
+                  transition: 'background 0.2s'
+                }}
+              >
+                Log In
+              </button>
+            </form>
+          </div>
+
+          {/* Right Image Section */}
+          <div style={{ display: 'none', '@media (min-width: 768px)': { display: 'block' }, position: 'relative', minHeight: '500px', overflow: 'hidden' }}>
+            <img
+              src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
+              alt="Reading setup scenic"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            <div style={{
+              position: 'absolute',
+              bottom: '40px',
+              left: '40px',
+              right: '40px',
+              color: '#fff',
+              textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+            }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: '800', lineHeight: 1.2, marginBottom: '8px' }}>
+                YOUR READING, SIMPLIFIED.
+              </h2>
+              <p style={{ fontSize: '0.95rem', opacity: 0.9 }}>
+                Keep track of every chapter, book, and milestone seamlessly.
+              </p>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* TRACKER VIEW */}
+      {view === 'tracker' && (
         <div style={{ maxWidth: '800px', width: '100%', margin: '40px auto', padding: '24px', background: '#fffbf7', color: '#2c2925', borderRadius: '12px', border: '1px solid #d4c5b9', boxShadow: '0 10px 30px rgba(44,41,37,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ color: '#5c4033', margin: 0 }}>📚 My Reading List</h2>
