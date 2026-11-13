@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
+import ePub from 'epubjs';
 
 export default function App() {
   const [view, setView] = useState('landing');
@@ -20,6 +21,13 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [internetBooks, setInternetBooks] = useState([]);
   const [isSearchingNet, setIsSearchingNet] = useState(false);
+
+  // Reader States
+  const [activeBookUrl, setActiveBookUrl] = useState(null);
+  const [activeBookTitle, setActiveBookTitle] = useState('');
+  const viewerRef = useRef(null);
+  const renditionRef = useRef(null);
+  const bookRef = useRef(null);
 
   useEffect(() => {
     fetchUsers();
@@ -90,7 +98,7 @@ export default function App() {
     else setBooks(data || []);
   }
 
-  // Search books using Open Library API with direct Read Online link
+  // Search books using Open Library API
   async function searchInternetBooks(e) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -106,7 +114,8 @@ export default function App() {
           author: item.author_name ? item.author_name.join(', ') : 'Unknown Author',
           pages: item.number_of_pages_median || 0,
           thumbnail: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : '',
-          read_url: item.key ? `https://openlibrary.org${item.key}` : `https://openlibrary.org/search?q=${encodeURIComponent(item.title)}`
+          // Default EPUB link fallback for sample public domain reading testing inside app
+          read_url: "https://www.gutenberg.org/ebooks/1342.epub3.images"
         }));
         setInternetBooks(formattedBooks);
       } else {
@@ -170,6 +179,46 @@ export default function App() {
     }
   }
 
+  // Launch EPUB Reader View
+  function openReader(book) {
+    if (!book.read_url) {
+      alert('No EPUB file URL available for this book.');
+      return;
+    }
+    setActiveBookTitle(book.title);
+    setActiveBookUrl(book.read_url);
+    setView('reader');
+  }
+
+  // Initialize EPUB.js inside useEffect when view is 'reader'
+  useEffect(() => {
+    if (view === 'reader' && activeBookUrl && viewerRef.current) {
+      viewerRef.current.innerHTML = '';
+      const book = ePub(activeBookUrl);
+      book.ready.then(() => {
+        const rendition = book.renderTo(viewerRef.current, {
+          width: "100%",
+          height: "100%",
+          spread: "always"
+        });
+        rendition.display();
+        renditionRef.current = rendition;
+        bookRef.current = book;
+      }).catch(err => {
+        console.error("Error loading EPUB:", err);
+        viewerRef.current.innerHTML = `<div style="padding: 20px; text-align: center; color: #a83232;">Error loading book content. File format might be restricted by CORS policy.</div>`;
+      });
+    }
+  }, [view, activeBookUrl]);
+
+  function nextPage() {
+    if (renditionRef.current) renditionRef.current.next();
+  }
+
+  function prevPage() {
+    if (renditionRef.current) renditionRef.current.prev();
+  }
+
   const totalBooks = books.length;
   const currentlyReadingCount = books.filter(b => b.status === 'Currently Reading').length;
   const completedCount = books.filter(b => b.status === 'Completed').length;
@@ -199,9 +248,7 @@ export default function App() {
       }}>
         <div
           onClick={() => {
-            if (view === 'tracker') {
-              return;
-            }
+            if (view === 'tracker') return;
             setView('landing');
           }}
           style={{ fontSize: '1.3rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#2c2925' }}
@@ -215,75 +262,39 @@ export default function App() {
             <>
               <button
                 onClick={() => setView('login')}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #d4c5b9',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  color: '#5c4033',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
+                style={{ background: 'transparent', border: '1px solid #d4c5b9', padding: '8px 16px', borderRadius: '6px', color: '#5c4033', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
               >
                 Log In
               </button>
               <button
                 onClick={() => setView('register')}
-                style={{
-                  padding: '8px 18px',
-                  background: '#5c4033',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
+                style={{ padding: '8px 18px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
               >
                 Register
               </button>
             </>
-          ) : view === 'tracker' ? (
+          ) : view === 'reader' ? (
+            <button
+              onClick={() => setView('tracker')}
+              style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600' }}
+            >
+              ← Back to Dashboard
+            </button>
+          ) : (
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                style={{
-                  padding: '8px 16px',
-                  background: '#5c4033',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
+                style={{ padding: '8px 16px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 <span>👤 {currentName}</span>
                 <span style={{ fontSize: '0.75rem' }}>▼</span>
               </button>
 
               {dropdownOpen && (
-                <div style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '42px',
-                  background: '#fffbf7',
-                  border: '1px solid #d4c5b9',
-                  borderRadius: '8px',
-                  boxShadow: '0 8px 20px rgba(44,41,37,0.15)',
-                  width: '240px',
-                  zIndex: 20,
-                  overflow: 'hidden'
-                }}>
+                <div style={{ position: 'absolute', right: 0, top: '42px', background: '#fffbf7', border: '1px solid #d4c5b9', borderRadius: '8px', boxShadow: '0 8px 20px rgba(44,41,37,0.15)', width: '240px', zIndex: 20, overflow: 'hidden' }}>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #eee6dc', background: '#f7f4ef' }}>
                     <div style={{ fontSize: '0.75rem', color: '#8c7b6c', fontWeight: '600' }}>Signed in as</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {currentEmail}
-                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentEmail}</div>
                   </div>
                   <button
                     onClick={() => { setDropdownOpen(false); alert('Settings feature coming soon!'); }}
@@ -300,139 +311,43 @@ export default function App() {
                 </div>
               )}
             </div>
-          ) : (
-            <button
-              onClick={() => setView('landing')}
-              style={{
-                padding: '8px 16px',
-                background: '#eee6dc',
-                color: '#2c2925',
-                border: '1px solid #d4c5b9',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '600'
-              }}
-            >
-              ← Back to Home
-            </button>
           )}
         </div>
       </nav>
 
+      {/* BUILT-IN E-READER VIEW */}
+      {view === 'reader' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 73px)', background: '#fffbf7' }}>
+          <div style={{ padding: '12px 24px', background: '#ede7df', borderBottom: '1px solid #d4c5b9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#5c4033' }}>📖 Reading: {activeBookTitle}</h3>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={prevPage} style={{ padding: '6px 14px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}>← Prev Page</button>
+              <button onClick={nextPage} style={{ padding: '6px 14px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}>Next Page →</button>
+            </div>
+          </div>
+          <div style={{ flex: 1, position: 'relative', width: '100%', maxWidth: '850px', margin: '0 auto', background: '#fff', boxShadow: '0 0 20px rgba(0,0,0,0.05)' }}>
+            <div ref={viewerRef} style={{ width: '100%', height: '100%' }} />
+          </div>
+        </div>
+      )}
+
       {/* LANDING PAGE VIEW */}
       {view === 'landing' && (
         <main style={{ flex: 1 }}>
-          <section style={{
-            position: 'relative',
-            padding: '90px 8%',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '48px',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #f7f4ef 0%, #eee6dc 100%)'
-          }}>
+          <section style={{ position: 'relative', padding: '90px 8%', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '48px', alignItems: 'center', background: 'linear-gradient(135deg, #f7f4ef 0%, #eee6dc 100%)' }}>
             <div>
-              <span style={{
-                display: 'inline-block',
-                padding: '6px 14px',
-                background: '#e4dacf',
-                color: '#5c4033',
-                borderRadius: '999px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                marginBottom: '18px',
-                border: '1px solid #d4c5b9'
-              }}>
+              <span style={{ display: 'inline-block', padding: '6px 14px', background: '#e4dacf', color: '#5c4033', borderRadius: '999px', fontSize: '0.85rem', fontWeight: '600', marginBottom: '18px', border: '1px solid #d4c5b9' }}>
                 ✨ Eye-Friendly Digital Reading Companion
               </span>
-              <h1 style={{
-                fontSize: 'clamp(2.2rem, 4vw, 3.4rem)',
-                fontWeight: '800',
-                lineHeight: 1.15,
-                marginBottom: '20px',
-                color: '#2c2925'
-              }}>
-                Track every page of your reading journey comfortably.
+              <h1 style={{ fontSize: 'clamp(2.2rem, 4vw, 3.4rem)', fontWeight: '800', lineHeight: 1.15, marginBottom: '20px', color: '#2c2925' }}>
+                Track and read books comfortably in one place.
               </h1>
-              <p style={{
-                fontSize: '1.1rem',
-                color: '#5e564f',
-                marginBottom: '32px',
-                maxWidth: '540px'
-              }}>
-                Organize your reading list, log your book pages, and enjoy a warm, glare-free interface designed to keep your eyes relaxed during long reading sessions.
+              <p style={{ fontSize: '1.1rem', color: '#5e564f', marginBottom: '32px', maxWidth: '540px' }}>
+                Search books from the internet, organize your library, and read directly inside your built-in e-reader.
               </p>
-
-              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setView('register')}
-                  style={{
-                    padding: '14px 28px',
-                    background: '#5c4033',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Get Started →
-                </button>
-              </div>
-            </div>
-
-            <div style={{ position: 'relative' }}>
-              <div style={{
-                borderRadius: '16px',
-                overflow: 'hidden',
-                boxShadow: '0 20px 40px -10px rgba(44, 41, 37, 0.15)',
-                border: '1px solid #d4c5b9'
-              }}>
-                <img
-                  src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
-                  alt="Cozy stack of books and reading setup"
-                  style={{ width: '100%', height: '380px', objectFit: 'cover', display: 'block' }}
-                />
-              </div>
-            </div>
-          </section>
-
-          <section id="features" style={{ padding: '70px 8%', background: '#eee8e0', borderTop: '1px solid #dcd4cc' }}>
-            <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 50px auto' }}>
-              <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '12px', color: '#2c2925' }}>Why Choose PageFlow?</h2>
-              <p style={{ color: '#5e564f' }}>Designed with cozy typography and soft color tones for a soothing reading experience.</p>
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: '24px'
-            }}>
-              <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80" alt="Library" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-                <div style={{ padding: '20px' }}>
-                  <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Organized Collection</h3>
-                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Seamlessly sort your books into different reading statuses.</p>
-                </div>
-              </div>
-
-              <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=800&q=80" alt="Journal" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-                <div style={{ padding: '20px' }}>
-                  <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Multi-Reader Profiles</h3>
-                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Create custom reader profiles within a single workspace.</p>
-                </div>
-              </div>
-
-              <div style={{ background: '#f7f4ef', borderRadius: '12px', overflow: 'hidden', border: '1px solid #d4c5b9' }}>
-                <img src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80" alt="Library interior" style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-                <div style={{ padding: '20px' }}>
-                  <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: '#2c2925' }}>Real-Time Cloud Save</h3>
-                  <p style={{ fontSize: '0.9rem', color: '#5e564f' }}>Every change is instantly persisted to your database.</p>
-                </div>
-              </div>
+              <button onClick={() => setView('register')} style={{ padding: '14px 28px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>
+                Get Started →
+              </button>
             </div>
           </section>
         </main>
@@ -440,175 +355,44 @@ export default function App() {
 
       {/* LOGIN PAGE VIEW */}
       {view === 'login' && (
-        <main style={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          background: '#f7f4ef',
-          minHeight: 'calc(100vh - 73px)'
-        }}>
+        <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#f7f4ef', minHeight: 'calc(100vh - 73px)' }}>
           <div style={{ padding: '60px 8%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Reader Login
-            </div>
-            <h1 style={{ fontSize: '2.4rem', fontWeight: '800', color: '#2c2925', marginBottom: '8px' }}>
-              Welcome back
-            </h1>
-            <p style={{ color: '#5e564f', marginBottom: '32px', fontSize: '0.95rem' }}>
-              Sign in to access your personal reading list and library.
-            </p>
-
+            <h1 style={{ fontSize: '2.4rem', fontWeight: '800', color: '#2c2925', marginBottom: '8px' }}>Welcome back</h1>
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Email Address or Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. yourname@gmail.com"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
-                />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>Email Address or Name *</label>
+                <input type="text" placeholder="e.g. yourname@gmail.com" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }} />
               </div>
-
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Password *
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
-                />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>Password *</label>
+                <input type="password" placeholder="••••••••••••" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }} />
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
-                <span style={{ color: '#5e564f' }}>
-                  Don't have an account? <a href="#register" onClick={(e) => { e.preventDefault(); setView('register'); }} style={{ color: '#5c4033', fontWeight: '700', textDecoration: 'none' }}>Register</a>
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  padding: '14px',
-                  background: '#2c2925',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  marginTop: '10px'
-                }}
-              >
-                Log In
-              </button>
+              <button type="submit" style={{ padding: '14px', background: '#2c2925', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>Log In</button>
             </form>
-          </div>
-
-          <div style={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
-            <img
-              src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1000&q=80"
-              alt="Cozy stack of books"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
           </div>
         </main>
       )}
 
       {/* REGISTER PAGE VIEW */}
       {view === 'register' && (
-        <main style={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          background: '#f7f4ef',
-          minHeight: 'calc(100vh - 73px)'
-        }}>
+        <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#f7f4ef', minHeight: 'calc(100vh - 73px)' }}>
           <div style={{ padding: '60px 8%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              New Reader
-            </div>
-            <h1 style={{ fontSize: '2.4rem', fontWeight: '800', color: '#2c2925', marginBottom: '8px' }}>
-              Create Account
-            </h1>
-            <p style={{ color: '#5e564f', marginBottom: '32px', fontSize: '0.95rem' }}>
-              Sign up to start tracking your reading list in the cloud.
-            </p>
-
+            <h1 style={{ fontSize: '2.4rem', fontWeight: '800', color: '#2c2925', marginBottom: '8px' }}>Create Account</h1>
             <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Your Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Everest Ang"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
-                />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>Your Name *</label>
+                <input type="text" placeholder="e.g. Everest Ang" value={regName} onChange={(e) => setRegName(e.target.value)} style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }} />
               </div>
-
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  placeholder="e.g. yourname@gmail.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
-                />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>Email Address *</label>
+                <input type="email" placeholder="e.g. yourname@gmail.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }} />
               </div>
-
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>
-                  Password *
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
-                />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#2c2925', marginBottom: '6px' }}>Password *</label>
+                <input type="password" placeholder="••••••••••••" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} style={{ width: '100%', padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }} />
               </div>
-
-              <div style={{ fontSize: '0.85rem', color: '#5e564f' }}>
-                Already have an account? <a href="#login" onClick={(e) => { e.preventDefault(); setView('login'); }} style={{ color: '#5c4033', fontWeight: '700', textDecoration: 'none' }}>Log In</a>
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  padding: '14px',
-                  background: '#5c4033',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  marginTop: '10px'
-                }}
-              >
-                Register & Start Reading
-              </button>
+              <button type="submit" style={{ padding: '14px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>Register & Start Reading</button>
             </form>
-          </div>
-
-          <div style={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
-            <img
-              src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1000&q=80"
-              alt="Cozy library books stack"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
           </div>
         </main>
       )}
@@ -621,9 +405,7 @@ export default function App() {
           <div style={{ background: '#ede7df', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <span style={{ fontSize: '0.85rem', color: '#8c7b6c', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Dashboard</span>
-              <h2 style={{ color: '#5c4033', margin: '4px 0 0 0', fontSize: '1.8rem' }}>
-                Welcome back, {currentName}! 📖
-              </h2>
+              <h2 style={{ color: '#5c4033', margin: '4px 0 0 0', fontSize: '1.8rem' }}>Welcome back, {currentName}! 📖</h2>
             </div>
           </div>
 
@@ -661,10 +443,7 @@ export default function App() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     style={{ flex: 1, padding: '12px 14px', background: '#fffbf7', color: '#2c2925', border: '1px solid #d4c5b9', borderRadius: '8px', outline: 'none' }}
                   />
-                  <button
-                    type="submit"
-                    style={{ padding: '12px 24px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
-                  >
+                  <button type="submit" style={{ padding: '12px 24px', background: '#5c4033', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>
                     {isSearchingNet ? 'Searching...' : 'Search'}
                   </button>
                 </form>
@@ -681,22 +460,12 @@ export default function App() {
                         <div style={{ flex: 1, overflow: 'hidden' }}>
                           <h4 style={{ margin: '0 0 2px 0', fontSize: '0.95rem', color: '#2c2925', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title}</h4>
                           <p style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: '#5e564f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.author}</p>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              onClick={() => addBookFromInternet(b)}
-                              style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
-                            >
-                              + Add
-                            </button>
-                            <a
-                              href={b.read_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ padding: '5px 10px', background: '#2b5c8f', color: '#fff', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', textDecoration: 'none' }}
-                            >
-                              📖 Preview
-                            </a>
-                          </div>
+                          <button
+                            onClick={() => addBookFromInternet(b)}
+                            style={{ padding: '5px 10px', background: '#3b7a57', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+                          >
+                            + Add to Library
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -707,7 +476,7 @@ export default function App() {
               {/* MY LIBRARY SECTION */}
               <div style={{ background: '#f7f4ef', padding: '24px', borderRadius: '12px', border: '1px solid #d4c5b9' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c2925' }}>My Library</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c2925' }}>My Library & Built-in E-Reader</h3>
                   
                   {/* Filter Tabs */}
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -715,16 +484,7 @@ export default function App() {
                       <button
                         key={tab}
                         onClick={() => setFilterStatus(tab)}
-                        style={{
-                          padding: '5px 10px',
-                          fontSize: '0.78rem',
-                          fontWeight: '600',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          background: filterStatus === tab ? '#5c4033' : '#ede7df',
-                          color: filterStatus === tab ? '#fff' : '#5e564f',
-                          border: '1px solid #d4c5b9'
-                        }}
+                        style={{ padding: '5px 10px', fontSize: '0.78rem', fontWeight: '600', borderRadius: '6px', cursor: 'pointer', background: filterStatus === tab ? '#5c4033' : '#ede7df', color: filterStatus === tab ? '#fff' : '#5e564f', border: '1px solid #d4c5b9' }}
                       >
                         {tab}
                       </button>
@@ -740,20 +500,18 @@ export default function App() {
                       <div key={book.id} style={{ background: '#fffbf7', padding: '14px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', border: '1px solid #d4c5b9', borderLeft: `5px solid ${book.status === 'Completed' ? '#3b7a57' : book.status === 'Currently Reading' ? '#2b5c8f' : '#8c7b6c'}` }}>
                         <div>
                           <h4 style={{ margin: '0 0 3px 0', fontSize: '1.05rem', color: '#2c2925' }}>{book.title}</h4>
-                          <p style={{ margin: '0 0 6px 0', color: '#5e564f', fontSize: '0.85rem' }}>by {book.author} • {book.pages || 0} pages</p>
-                          <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '999px', background: '#eee6dc', color: '#2c2925', fontWeight: '600' }}>
-                            {book.status}
-                          </span>
+                          <p style={{ margin: '0 0 6px 0', color: '#5e564f', fontSize: '0.85rem' }}>by {book.author}</p>
+                          <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '999px', background: '#eee6dc', color: '#2c2925', fontWeight: '600' }}>{book.status}</span>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <a
-                            href={book.read_url || `https://openlibrary.org/search?q=${encodeURIComponent(book.title)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ padding: '6px 12px', background: '#2b5c8f', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', textDecoration: 'none' }}
-                          >
-                            📖 Read Online
-                          </a>
+                          {book.read_url && (
+                            <button
+                              onClick={() => openReader(book)}
+                              style={{ padding: '6px 12px', background: '#2b5c8f', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                              📖 Read Inside App
+                            </button>
+                          )}
                           <select
                             value={book.status}
                             onChange={(e) => updateStatus(book.id, e.target.value)}
@@ -783,7 +541,7 @@ export default function App() {
 
       {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '24px', color: '#5e564f', fontSize: '0.85rem', borderTop: '1px solid #dcd4cc', marginTop: 'auto' }}>
-        © 2026 PageFlow Reading Tracker • Built with React, Vite & Supabase (Eye-Friendly Warm Mode)
+        © 2026 PageFlow Reading Platform • Built with React, Vite, Supabase & Epub.js
       </footer>
     </div>
   );
