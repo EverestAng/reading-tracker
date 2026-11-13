@@ -212,7 +212,6 @@ export default function App() {
               </button>
             </>
           ) : view === 'tracker' ? (
-            /* DYNAMIC USER ACCOUNT DROPDOWN MENU */
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -243,14 +242,14 @@ export default function App() {
                   border: '1px solid #d4c5b9',
                   borderRadius: '8px',
                   boxShadow: '0 8px 20px rgba(44,41,37,0.15)',
-                  width: '200px',
+                  width: '220px',
                   zIndex: 20,
                   overflow: 'hidden'
                 }}>
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #eee6dc', background: '#f7f4ef' }}>
                     <div style={{ fontSize: '0.75rem', color: '#8c7b6c', fontWeight: '600' }}>Signed in as</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {selectedUser ? selectedUser.name : 'User'}
+                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#2c2925', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {selectedUser && selectedUser.email ? selectedUser.email : 'No email provided'}
                     </div>
                   </div>
                   <button
