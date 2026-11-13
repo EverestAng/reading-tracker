@@ -116,7 +116,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar - Clean, no extra buttons */}
       <nav style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -136,7 +136,7 @@ export default function App() {
           <span>PageFlow</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+        <div>
           <button
             onClick={() => setView('landing')}
             style={{
@@ -149,22 +149,6 @@ export default function App() {
             }}
           >
             Home
-          </button>
-          <button
-            onClick={() => setView(view === 'landing' ? 'tracker' : 'landing')}
-            className="cta-btn"
-            style={{
-              padding: '8px 18px',
-              background: '#5c4033',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              fontSize: '0.95rem'
-            }}
-          >
-            {view === 'landing' ? 'My Library' : 'Home'}
           </button>
         </div>
       </nav>
