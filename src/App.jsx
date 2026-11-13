@@ -92,21 +92,22 @@ export default function App() {
   }
 
   // Function to search books from the internet using the Google Books API
+  // Function to search books using Open Library API (bypasses Google's 429 rate limit)
   async function searchInternetBooks(e) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsSearchingNet(true);
     try {
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=6`);
+      const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=6`);
       const data = await res.json();
       
-      if (data.items) {
-        const formattedBooks = data.items.map(item => ({
-          title: item.volumeInfo.title || 'No Title',
-          author: item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Unknown Author',
-          pages: item.volumeInfo.pageCount || 0,
-          thumbnail: item.volumeInfo.imageLinks?.thumbnail || ''
+      if (data.docs && data.docs.length > 0) {
+        const formattedBooks = data.docs.map(item => ({
+          title: item.title || 'No Title',
+          author: item.author_name ? item.author_name.join(', ') : 'Unknown Author',
+          pages: item.number_of_pages_median || 0,
+          thumbnail: item.cover_i ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg` : ''
         }));
         setInternetBooks(formattedBooks);
       } else {
@@ -114,7 +115,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error searching books:', err);
-      alert('An error occurred while searching books from the internet.');
+      alert('An error occurred while searching books.');
     } finally {
       setIsSearchingNet(false);
     }
